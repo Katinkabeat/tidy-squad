@@ -183,6 +183,30 @@
     .time-text  { font-size: .78rem; color: var(--gray); }
     .done-by    { font-size: .78rem; color: var(--green); font-weight: 700; margin-top: 4px; }
 
+    /* Progress bar */
+    .progress-wrap {
+      margin-top: 10px;
+      background: #E5E7EB;
+      border-radius: 99px;
+      height: 7px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .4s ease;
+    }
+    .progress-bar.green  { background: var(--green); }
+    .progress-bar.amber  { background: var(--amber); }
+    .progress-bar.red    { background: var(--red);   }
+    .due-date-text {
+      font-size: .74rem;
+      color: var(--gray);
+      margin-top: 4px;
+    }
+    .due-date-text.overdue { color: var(--red);   font-weight: 700; }
+    .due-date-text.soon    { color: var(--amber);  font-weight: 700; }
+
     .claim-btn {
       margin-top: 10px;
       width: 100%;
@@ -635,7 +659,7 @@
     <div class="sheet-sub" id="claimChoreSub">Pick your name to mark it done!</div>
     <div class="kid-grid" id="kidPickerGrid"></div>
     <div id="noKidsMsg" style="display:none; text-align:center; padding: 20px; color: var(--gray); font-size:.9rem;">
-      No kids added yet — ask a parent to add your name in Admin!
+      No people added yet — ask a parent to add your name in Admin!
     </div>
   </div>
 </div>
@@ -670,7 +694,7 @@
 
     <div class="tabs">
       <div class="tab active" data-tab="chores"   onclick="switchTab(this,'chores')">🧹 Chores</div>
-      <div class="tab"        data-tab="kids"     onclick="switchTab(this,'kids')">👧 Kids</div>
+      <div class="tab"        data-tab="kids"     onclick="switchTab(this,'kids')">👤 People</div>
       <div class="tab"        data-tab="settings" onclick="switchTab(this,'settings')">⚙️ Settings</div>
     </div>
 
@@ -701,17 +725,17 @@
       </button>
     </div>
 
-    <!-- ── KIDS TAB ───────────────────────────── -->
+    <!-- ── PEOPLE TAB ───────────────────────────── -->
     <div id="tab-kids" style="display:none">
       <div id="adminKidList"></div>
       <hr>
-      <div style="font-weight:800; font-size:1rem; margin-bottom:12px;">➕ Add a Kid</div>
+      <div style="font-weight:800; font-size:1rem; margin-bottom:12px;">➕ Add a Person</div>
       <div class="form-group">
         <label>Name</label>
         <input type="text" id="newKidName" placeholder="e.g. Emma"
                onkeydown="if(event.key==='Enter') addKid()" />
       </div>
-      <button class="btn btn-primary btn-full" onclick="addKid()">Add Kid</button>
+      <button class="btn btn-primary btn-full" onclick="addKid()">Add Person</button>
     </div>
 
     <!-- ── SETTINGS TAB ───────────────────────── -->
@@ -1034,6 +1058,28 @@ function timeText(chore) {
   return "Done " + humanize(elapsed) + " ago";
 }
 
+function choreProgress(chore) {
+  if (!chore.lastCompleted) return 100;
+  const elapsed = Date.now() - chore.lastCompleted;
+  const freqMs  = FREQ_MS[chore.frequency] || FREQ_MS.weekly;
+  return Math.min(100, Math.round((elapsed / freqMs) * 100));
+}
+
+function nextDueDateText(chore) {
+  if (!chore.lastCompleted) return "Never done — overdue!";
+  const freqMs  = FREQ_MS[chore.frequency] || FREQ_MS.weekly;
+  const nextDue = chore.lastCompleted + freqMs;
+  const diffMs  = nextDue - Date.now();
+  const diffDays = Math.floor(diffMs / 86_400_000);
+  if (diffMs < 0) {
+    return "Overdue by " + humanize(-diffMs);
+  }
+  if (diffDays === 0) return "Due today";
+  if (diffDays === 1) return "Due tomorrow";
+  const d = new Date(nextDue);
+  return "Due " + d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+}
+
 function humanize(ms) {
   const mins  = Math.floor(ms / 60_000);
   const hrs   = Math.floor(ms / 3_600_000);
@@ -1091,16 +1137,23 @@ function renderSection(type, items) {
   }
 
   container.innerHTML = items.map(chore => {
-    const freq   = FREQ_LABELS[chore.frequency] || chore.frequency;
-    const tText  = timeText(chore);
-    const isDone = type === "done";
-    const btnCls = isDone ? "redo" : type;
-    const btnLbl = type === "overdue" ? "🙋 I did this!"
-                 : type === "soon"    ? "🙋 Mark as done"
-                 :                      "🔄 Done again";
+    const freq    = FREQ_LABELS[chore.frequency] || chore.frequency;
+    const tText   = timeText(chore);
+    const isDone  = type === "done";
+    const btnCls  = isDone ? "redo" : type;
+    const btnLbl  = type === "overdue" ? "🙋 I did this!"
+                  : type === "soon"    ? "🙋 Mark as done"
+                  :                      "🔄 Done again";
     const doneByHtml = isDone && chore.lastCompletedBy
       ? `<div class="done-by">✓ Completed by ${escHtml(chore.lastCompletedBy)}</div>`
       : "";
+
+    // Progress bar
+    const pct      = choreProgress(chore);
+    const barColor = pct >= 100 ? "red" : pct >= 75 ? "amber" : "green";
+    const barWidth = Math.min(100, pct);
+    const dueTxt   = nextDueDateText(chore);
+    const dueCls   = type === "overdue" ? "overdue" : type === "soon" ? "soon" : "";
 
     return `<div class="chore-card ${type}" data-id="${chore.id}">
       <div class="chore-name">${escHtml(chore.name)}</div>
@@ -1109,6 +1162,10 @@ function renderSection(type, items) {
         <span class="time-text">${tText}</span>
       </div>
       ${doneByHtml}
+      <div class="progress-wrap">
+        <div class="progress-bar ${barColor}" style="width:${barWidth}%"></div>
+      </div>
+      <div class="due-date-text ${dueCls}">${dueTxt}</div>
       <button class="claim-btn ${btnCls}" onclick="openClaimModal('${escAttr(chore.id)}','${escAttr(chore.name)}')">
         ${btnLbl}
       </button>
@@ -1286,7 +1343,7 @@ function renderAdminKidList() {
   const el = document.getElementById("adminKidList");
   const entries = Object.entries(kidsData);
   if (!entries.length) {
-    el.innerHTML = `<p style="color:var(--gray);text-align:center;padding:12px;">No kids added yet.</p>`;
+    el.innerHTML = `<p style="color:var(--gray);text-align:center;padding:12px;">No people added yet.</p>`;
     return;
   }
   el.innerHTML = entries.map(([id, kid], i) => `
