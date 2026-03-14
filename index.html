@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Tidy Squad</title>
+
+  <!-- PWA Manifest (inline) -->
+  <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Tidy+Squad%22%2C%22short_name%22%3A%22Tidy+Squad%22%2C%22description%22%3A%22Family+Chore+Chart%22%2C%22start_url%22%3A%22.%2F%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%234F46E5%22%2C%22theme_color%22%3A%22%237C3AED%22%2C%22orientation%22%3A%22portrait%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%3Bbase64%2CPHVzZSBocmVmPScnLz4%3D%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%7D%5D%7D" />
+
+  <!-- PWA iOS meta tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Tidy Squad" />
+  <meta name="theme-color" content="#7C3AED" />
+
+  <!-- App icon (inline SVG as favicon + apple touch icon) -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0iIzdDM0FFRCIvPgogIDxyZWN0IHg9IjI3MCIgeT0iMjYwIiB3aWR0aD0iMzIiIGhlaWdodD0iMTMwIiByeD0iMTQiIGZpbGw9IiNDOTgzMkIiIHRyYW5zZm9ybT0icm90YXRlKDM1IDI4NiAzMjUpIi8+CiAgPGVsbGlwc2UgY3g9IjE5NSIgY3k9IjIyMCIgcng9IjEwNSIgcnk9IjcyIiBmaWxsPSIjRTlENUZGIi8+CiAgPGVsbGlwc2UgY3g9IjE0MCIgY3k9IjE5NSIgcng9IjQ4IiByeT0iMzYiIGZpbGw9IiNGM0U4RkYiLz4KICA8ZWxsaXBzZSBjeD0iMTkwIiBjeT0iMTY4IiByeD0iNDQiIHJ5PSIzMiIgZmlsbD0iI0YzRThGRiIvPgogIDxlbGxpcHNlIGN4PSIyNDAiIGN5PSIxODgiIHJ4PSI0MiIgcnk9IjMwIiBmaWxsPSIjRjNFOEZGIi8+CiAgPGVsbGlwc2UgY3g9IjE1NSIgY3k9IjI0OCIgcng9IjQ0IiByeT0iMjgiIGZpbGw9IiNGM0U4RkYiLz4KICA8ZWxsaXBzZSBjeD0iMjEwIiBjeT0iMjU1IiByeD0iNDAiIHJ5PSIyNiIgZmlsbD0iI0YzRThGRiIvPgogIDxlbGxpcHNlIGN4PSIyNjAiIGN5PSIyMzgiIHJ4PSIzNiIgcnk9IjI0IiBmaWxsPSIjRjNFOEZGIi8+CiAgPGNpcmNsZSBjeD0iMTc1IiBjeT0iMjE1IiByPSIyMiIgZmlsbD0id2hpdGUiLz4KICA8Y2lyY2xlIGN4PSIyMzUiIGN5PSIyMTAiIHI9IjIwIiBmaWxsPSJ3aGl0ZSIvPgogIDxjaXJjbGUgY3g9IjE3OCIgY3k9IjIxNyIgcj0iMTMiIGZpbGw9IiMxRTFCNEIiLz4KICA8Y2lyY2xlIGN4PSIyMzgiIGN5PSIyMTIiIHI9IjEyIiBmaWxsPSIjMUUxQjRCIi8+CiAgPGNpcmNsZSBjeD0iMTgzIiBjeT0iMjExIiByPSI1IiBmaWxsPSJ3aGl0ZSIvPgogIDxjaXJjbGUgY3g9IjI0MyIgY3k9IjIwNiIgcj0iNCIgZmlsbD0id2hpdGUiLz4KICA8ZWxsaXBzZSBjeD0iMjA1IiBjeT0iMjQ4IiByeD0iMTYiIHJ5PSIxOSIgZmlsbD0iIzFFMUI0QiIvPgogIDxlbGxpcHNlIGN4PSIyMDUiIGN5PSIyNDgiIHJ4PSIxMSIgcnk9IjE0IiBmaWxsPSIjRUM0ODk5Ii8+CiAgPGVsbGlwc2UgY3g9IjE0OCIgY3k9IjI0MCIgcng9IjE0IiByeT0iOSIgZmlsbD0iI0ZDQTVBNSIgb3BhY2l0eT0iMC42Ii8+CiAgPGVsbGlwc2UgY3g9IjI2MiIgY3k9IjIzNCIgcng9IjEyIiByeT0iOCIgZmlsbD0iI0ZDQTVBNSIgb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMzAwIiB5PSIxNTAiIGZvbnQtc2l6ZT0iNDIiIGZpbGw9IiNGREU2OEEiPuKcpjwvdGV4dD4KICA8dGV4dCB4PSI5MCIgIHk9IjEzMCIgZm9udC1zaXplPSIyOCIgZmlsbD0iI0ZERTY4QSI+4pymPC90ZXh0PgogIDx0ZXh0IHg9IjMyMCIgeT0iMjAwIiBmb250LXNpemU9IjIwIiBmaWxsPSIjRkRFNjhBIj7inKY8L3RleHQ+CiAgPHRleHQgeD0iNzAiICB5PSIyOTAiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNGREU2OEEiPuKcpjwvdGV4dD4KPC9zdmc+" />
+  <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj4KICA8Y2lyY2xlIGN4PSIyNTYiIGN5PSIyNTYiIHI9IjI1NiIgZmlsbD0iIzdDM0FFRCIvPgogIDxyZWN0IHg9IjI3MCIgeT0iMjYwIiB3aWR0aD0iMzIiIGhlaWdodD0iMTMwIiByeD0iMTQiIGZpbGw9IiNDOTgzMkIiIHRyYW5zZm9ybT0icm90YXRlKDM1IDI4NiAzMjUpIi8+CiAgPGVsbGlwc2UgY3g9IjE5NSIgY3k9IjIyMCIgcng9IjEwNSIgcnk9IjcyIiBmaWxsPSIjRTlENUZGIi8+CiAgPGVsbGlwc2UgY3g9IjE0MCIgY3k9IjE5NSIgcng9IjQ4IiByeT0iMzYiIGZpbGw9IiNGM0U4RkYiLz4KICA8ZWxsaXBzZSBjeD0iMTkwIiBjeT0iMTY4IiByeD0iNDQiIHJ5PSIzMiIgZmlsbD0iI0YzRThGRiIvPgogIDxlbGxpcHNlIGN4PSIyNDAiIGN5PSIxODgiIHJ4PSI0MiIgcnk9IjMwIiBmaWxsPSIjRjNFOEZGIi8+CiAgPGVsbGlwc2UgY3g9IjE1NSIgY3k9IjI0OCIgcng9IjQ0IiByeT0iMjgiIGZpbGw9IiNGM0U4RkYiLz4KICA8ZWxsaXBzZSBjeD0iMjEwIiBjeT0iMjU1IiByeD0iNDAiIHJ5PSIyNiIgZmlsbD0iI0YzRThGRiIvPgogIDxlbGxpcHNlIGN4PSIyNjAiIGN5PSIyMzgiIHJ4PSIzNiIgcnk9IjI0IiBmaWxsPSIjRjNFOEZGIi8+CiAgPGNpcmNsZSBjeD0iMTc1IiBjeT0iMjE1IiByPSIyMiIgZmlsbD0id2hpdGUiLz4KICA8Y2lyY2xlIGN4PSIyMzUiIGN5PSIyMTAiIHI9IjIwIiBmaWxsPSJ3aGl0ZSIvPgogIDxjaXJjbGUgY3g9IjE3OCIgY3k9IjIxNyIgcj0iMTMiIGZpbGw9IiMxRTFCNEIiLz4KICA8Y2lyY2xlIGN4PSIyMzgiIGN5PSIyMTIiIHI9IjEyIiBmaWxsPSIjMUUxQjRCIi8+CiAgPGNpcmNsZSBjeD0iMTgzIiBjeT0iMjExIiByPSI1IiBmaWxsPSJ3aGl0ZSIvPgogIDxjaXJjbGUgY3g9IjI0MyIgY3k9IjIwNiIgcj0iNCIgZmlsbD0id2hpdGUiLz4KICA8ZWxsaXBzZSBjeD0iMjA1IiBjeT0iMjQ4IiByeD0iMTYiIHJ5PSIxOSIgZmlsbD0iIzFFMUI0QiIvPgogIDxlbGxpcHNlIGN4PSIyMDUiIGN5PSIyNDgiIHJ4PSIxMSIgcnk9IjE0IiBmaWxsPSIjRUM0ODk5Ii8+CiAgPGVsbGlwc2UgY3g9IjE0OCIgY3k9IjI0MCIgcng9IjE0IiByeT0iOSIgZmlsbD0iI0ZDQTVBNSIgb3BhY2l0eT0iMC42Ii8+CiAgPGVsbGlwc2UgY3g9IjI2MiIgY3k9IjIzNCIgcng9IjEyIiByeT0iOCIgZmlsbD0iI0ZDQTVBNSIgb3BhY2l0eT0iMC42Ii8+CiAgPHRleHQgeD0iMzAwIiB5PSIxNTAiIGZvbnQtc2l6ZT0iNDIiIGZpbGw9IiNGREU2OEEiPuKcpjwvdGV4dD4KICA8dGV4dCB4PSI5MCIgIHk9IjEzMCIgZm9udC1zaXplPSIyOCIgZmlsbD0iI0ZERTY4QSI+4pymPC90ZXh0PgogIDx0ZXh0IHg9IjMyMCIgeT0iMjAwIiBmb250LXNpemU9IjIwIiBmaWxsPSIjRkRFNjhBIj7inKY8L3RleHQ+CiAgPHRleHQgeD0iNzAiICB5PSIyOTAiIGZvbnQtc2l6ZT0iMjQiIGZpbGw9IiNGREU2OEEiPuKcpjwvdGV4dD4KPC9zdmc+" />
+
+  <!-- Firebase SDK (compat v9) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* ============================================================
+       RESET & VARIABLES
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --purple:   #7C3AED;
+      --purple-lt:#EDE9FE;
+      --red:      #DC2626;
+      --red-lt:   #FEF2F2;
+      --amber:    #D97706;
+      --amber-lt: #FFFBEB;
+      --green:    #059669;
+      --green-lt: #ECFDF5;
+      --gray:     #6B7280;
+      --gray-lt:  #F3F4F6;
+      --text:     #111827;
+      --card-shadow: 0 2px 12px rgba(0,0,0,.10);
+      --radius:   14px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(145deg, #4F46E5 0%, #7C3AED 50%, #9333EA 100%);
+      min-height: 100vh;
+      padding-bottom: 48px;
+    }
+
+    /* ============================================================
+       HEADER
+    ============================================================ */
+    .header {
+      background: rgba(255,255,255,.15);
+      backdrop-filter: blur(12px);
+      padding: 18px 20px 16px;
+      position: sticky; top: 0; z-index: 200;
+      text-align: center;
+    }
+    .header h1 {
+      color: #fff;
+      font-size: 1.7rem;
+      font-weight: 900;
+      letter-spacing: -.5px;
+      text-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    .header-date {
+      color: rgba(255,255,255,.75);
+      font-size: .82rem;
+      margin-top: 3px;
+    }
+    .admin-btn {
+      position: absolute;
+      right: 14px; top: 16px;
+      background: rgba(255,255,255,.2);
+      border: 1.5px solid rgba(255,255,255,.45);
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: .82rem;
+      font-weight: 700;
+      transition: background .15s;
+    }
+    .admin-btn:hover { background: rgba(255,255,255,.35); }
+
+    /* ============================================================
+       SETUP BANNER
+    ============================================================ */
+    #setupBanner {
+      margin: 16px;
+      background: #FEF3C7;
+      border: 2px solid #F59E0B;
+      border-radius: var(--radius);
+      padding: 16px;
+      font-size: .88rem;
+      line-height: 1.6;
+      color: #92400E;
+    }
+    #setupBanner strong { display: block; font-size: 1rem; margin-bottom: 4px; }
+    #setupBanner ol { padding-left: 20px; margin-top: 8px; }
+    #setupBanner li { margin-bottom: 4px; }
+    #setupBanner code {
+      background: rgba(0,0,0,.08);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-family: monospace;
+      font-size: .82rem;
+    }
+
+    /* ============================================================
+       MAIN
+    ============================================================ */
+    .main {
+      padding: 16px;
+      max-width: 620px;
+      margin: 0 auto;
+    }
+
+    /* ============================================================
+       SECTION HEADINGS
+    ============================================================ */
+    .section { margin-bottom: 20px; }
+    .section-head {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 10px;
+    }
+    .section-title {
+      color: #fff;
+      font-size: 1.05rem;
+      font-weight: 800;
+      text-shadow: 0 1px 4px rgba(0,0,0,.2);
+    }
+    .section-badge {
+      background: rgba(255,255,255,.3);
+      color: #fff;
+      font-size: .75rem;
+      font-weight: 800;
+      padding: 2px 10px;
+      border-radius: 20px;
+    }
+
+    /* ============================================================
+       CHORE CARDS
+    ============================================================ */
+    .chore-card {
+      background: #fff;
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      box-shadow: var(--card-shadow);
+      border-left: 5px solid #E5E7EB;
+      transition: transform .15s, box-shadow .15s;
+    }
+    .chore-card:active { transform: scale(.98); }
+    .chore-card.overdue { border-left-color: var(--red); }
+    .chore-card.soon    { border-left-color: var(--amber); }
+    .chore-card.done    { border-left-color: var(--green); opacity: .88; }
+
+    .chore-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .chore-meta {
+      display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+      margin-top: 6px;
+    }
+    .freq-tag {
+      background: var(--gray-lt);
+      color: var(--gray);
+      font-size: .72rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+    }
+    .time-text  { font-size: .78rem; color: var(--gray); }
+    .done-by    { font-size: .78rem; color: var(--green); font-weight: 700; margin-top: 4px; }
+
+    .claim-btn {
+      margin-top: 10px;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      font-size: .92rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: opacity .15s, transform .15s;
+    }
+    .claim-btn:hover { opacity: .88; transform: translateY(-1px); }
+    .claim-btn.overdue { background: var(--red);   color: #fff; }
+    .claim-btn.soon    { background: var(--amber);  color: #fff; }
+    .claim-btn.redo    { background: var(--gray-lt); color: var(--gray); }
+
+    /* ============================================================
+       EMPTY STATE
+    ============================================================ */
+    .empty-state {
+      background: rgba(255,255,255,.18);
+      border-radius: var(--radius);
+      padding: 18px;
+      text-align: center;
+      color: rgba(255,255,255,.82);
+      font-size: .9rem;
+    }
+
+    /* ============================================================
+       LOADING
+    ============================================================ */
+    #loadingState {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(255,255,255,.85);
+      font-size: 1.05rem;
+    }
+    .spinner {
+      display: inline-block;
+      width: 32px; height: 32px;
+      border: 3px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin-bottom: 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ============================================================
+       MODAL OVERLAY + SHEET
+    ============================================================ */
+    .overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      z-index: 500;
+      display: none; align-items: flex-end; justify-content: center;
+    }
+    .overlay.open { display: flex; }
+    .sheet {
+      background: #fff;
+      border-radius: 24px 24px 0 0;
+      padding: 24px 20px 32px;
+      width: 100%;
+      max-width: 620px;
+      max-height: 92vh;
+      overflow-y: auto;
+      animation: slideUp .25s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+    .sheet-title {
+      font-size: 1.25rem;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .sheet-sub {
+      font-size: .85rem;
+      color: var(--gray);
+      margin-bottom: 18px;
+    }
+    .close-btn {
+      float: right;
+      background: var(--gray-lt);
+      border: none;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      font-size: 1rem;
+      cursor: pointer;
+      color: var(--gray);
+      line-height: 32px;
+      text-align: center;
+    }
+
+    /* ============================================================
+       KIDS GRID (claim picker)
+    ============================================================ */
+    .kid-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+      margin-top: 4px;
+    }
+    .kid-tile {
+      background: var(--gray-lt);
+      border: 2.5px solid transparent;
+      border-radius: 14px;
+      padding: 18px 8px 14px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .kid-tile:hover, .kid-tile:active {
+      border-color: var(--purple);
+      background: var(--purple-lt);
+    }
+    .kid-tile .av { font-size: 2.2rem; display: block; margin-bottom: 5px; }
+    .kid-tile .nm { font-size: .88rem; font-weight: 700; color: var(--text); }
+
+    /* ============================================================
+       FORMS
+    ============================================================ */
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block;
+      font-size: .78rem;
+      font-weight: 700;
+      color: var(--gray);
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      margin-bottom: 5px;
+    }
+    input[type="text"],
+    input[type="password"],
+    select {
+      width: 100%;
+      padding: 11px 14px;
+      border: 2px solid #E5E7EB;
+      border-radius: 10px;
+      font-size: .96rem;
+      color: var(--text);
+      background: #fff;
+      transition: border-color .15s;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--purple);
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'%3E%3Cpath fill='%236B7280' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
+    /* ============================================================
+       BUTTONS
+    ============================================================ */
+    .btn {
+      display: inline-block;
+      padding: 11px 18px;
+      border: none;
+      border-radius: 10px;
+      font-size: .95rem;
+      font-weight: 800;
+      cursor: pointer;
+      transition: opacity .15s, transform .15s;
+    }
+    .btn:hover  { opacity: .88; transform: translateY(-1px); }
+    .btn:active { transform: scale(.97); }
+    .btn-full   { width: 100%; text-align: center; }
+    .btn-primary { background: var(--purple); color: #fff; }
+    .btn-danger  { background: var(--red);    color: #fff; }
+    .btn-ghost   { background: var(--gray-lt); color: var(--text); }
+    .btn-green   { background: var(--green);   color: #fff; }
+
+    .btn-row { display: flex; gap: 10px; }
+    .btn-row .btn { flex: 1; }
+
+    /* ============================================================
+       TABS
+    ============================================================ */
+    .tabs {
+      display: flex; gap: 6px;
+      overflow-x: auto;
+      margin-bottom: 18px;
+      padding-bottom: 2px;
+    }
+    .tab {
+      flex-shrink: 0;
+      padding: 7px 16px;
+      border: 2px solid #E5E7EB;
+      border-radius: 20px;
+      background: #fff;
+      cursor: pointer;
+      font-size: .85rem;
+      font-weight: 700;
+      color: var(--gray);
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .tab.active {
+      background: var(--purple);
+      border-color: var(--purple);
+      color: #fff;
+    }
+
+    /* ============================================================
+       LIST ITEMS (admin)
+    ============================================================ */
+    .list-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 14px;
+      background: var(--gray-lt);
+      border-radius: 10px;
+      margin-bottom: 8px;
+    }
+    .li-left .li-name  { font-weight: 700; font-size: .95rem; color: var(--text); }
+    .li-left .li-sub   { font-size: .78rem; color: var(--gray); margin-top: 2px; }
+    .li-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      background: none; border: none;
+      padding: 5px 8px;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background .15s;
+    }
+    .icon-btn:hover { background: #E5E7EB; }
+
+    /* ============================================================
+       DIVIDER
+    ============================================================ */
+    hr { border: none; border-top: 2px solid #F3F4F6; margin: 18px 0; }
+
+    /* ============================================================
+       STATUS / ALERT MESSAGES
+    ============================================================ */
+    .msg {
+      font-size: .85rem;
+      margin-top: 8px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: none;
+    }
+    .msg.ok  { background: var(--green-lt); color: var(--green); }
+    .msg.err { background: var(--red-lt);   color: var(--red); }
+
+    /* ============================================================
+       TOAST
+    ============================================================ */
+    #toast {
+      position: fixed;
+      bottom: 28px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: #111827;
+      color: #fff;
+      padding: 11px 24px;
+      border-radius: 30px;
+      font-size: .9rem;
+      font-weight: 700;
+      z-index: 9999;
+      box-shadow: 0 4px 20px rgba(0,0,0,.25);
+      transition: transform .3s cubic-bezier(.34,1.56,.64,1);
+      white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+
+    /* ============================================================
+       FIREBASE STATUS CHIP
+    ============================================================ */
+    .status-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: .8rem;
+      font-weight: 700;
+    }
+    .status-chip.connected    { background: var(--green-lt); color: var(--green); }
+    .status-chip.disconnected { background: var(--amber-lt); color: var(--amber); }
+    .status-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ============================================================
+       SECTION COLLAPSE ANIMATION
+    ============================================================ */
+    .section { animation: fadeIn .3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  </style>
+</head>
+
+<body>
+
+<!-- ============================================================
+     HEADER
+============================================================ -->
+<header class="header">
+  <h1>🧹 <span id="familyNameDisplay">Tidy Squad</span></h1>
+  <div class="header-date" id="dateDisplay"></div>
+  <button class="admin-btn" onclick="openAdminLogin()">🔒 Admin</button>
+</header>
+
+<!-- ============================================================
+     SETUP BANNER (shown when Firebase not configured)
+============================================================ -->
+<div id="setupBanner" style="display:none">
+  <strong>⚠️ Firebase not yet connected — data is local to this device only!</strong>
+  To share this chore chart across all phones in real time, you need to connect it to a free Firebase database.
+  <br><br>
+  <strong>Quick setup (takes ~10 minutes, totally free):</strong>
+  <ol>
+    <li>Go to <code>console.firebase.google.com</code> and sign in with Google.</li>
+    <li>Click <strong>Add project</strong>, name it (e.g. <em>family-chores</em>), then click through and create it.</li>
+    <li>In the left sidebar click <strong>Realtime Database → Create database</strong>. Choose <em>Start in test mode</em> and click Enable.</li>
+    <li>Click the ⚙️ gear icon → <strong>Project settings</strong>. Scroll to <em>Your apps</em>, click <strong>&lt;/&gt; Web</strong>, register the app, then <strong>copy the firebaseConfig object values</strong>.</li>
+    <li>Open this HTML file in a text editor, find the section labelled <code>FIREBASE CONFIGURATION</code> near the top of the <code>&lt;script&gt;</code> block, and paste in your values.</li>
+    <li>To share across phones: drag this HTML file to <strong>netlify.com/drop</strong> (free, no account needed). You'll get a URL — bookmark it on every phone!</li>
+  </ol>
+  <br>
+  <em>Until then, all data is saved locally on this device only.</em>
+</div>
+
+<!-- ============================================================
+     MAIN CONTENT
+============================================================ -->
+<div class="main" id="mainContent" style="display:none">
+
+  <!-- OVERDUE -->
+  <div class="section" id="sec-overdue">
+    <div class="section-head">
+      <div class="section-title">🔴 Needs to be Done NOW</div>
+      <div class="section-badge" id="cnt-overdue">0</div>
+    </div>
+    <div id="list-overdue"></div>
+  </div>
+
+  <!-- SOON -->
+  <div class="section" id="sec-soon">
+    <div class="section-head">
+      <div class="section-title">🟡 Coming Up Soon</div>
+      <div class="section-badge" id="cnt-soon">0</div>
+    </div>
+    <div id="list-soon"></div>
+  </div>
+
+  <!-- DONE -->
+  <div class="section" id="sec-done">
+    <div class="section-head">
+      <div class="section-title">✅ All Done!</div>
+      <div class="section-badge" id="cnt-done">0</div>
+    </div>
+    <div id="list-done"></div>
+  </div>
+
+</div>
+
+<!-- Loading state -->
+<div id="loadingState">
+  <div class="spinner"></div><br>Loading chores…
+</div>
+
+
+<!-- ============================================================
+     CLAIM MODAL
+============================================================ -->
+<div class="overlay" id="claimOverlay" onclick="closeOverlay('claimOverlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <button class="close-btn" onclick="closeOverlay('claimOverlay')">✕</button>
+    <div class="sheet-title">Who did this? 🙌</div>
+    <div class="sheet-sub" id="claimChoreSub">Pick your name to mark it done!</div>
+    <div class="kid-grid" id="kidPickerGrid"></div>
+    <div id="noKidsMsg" style="display:none; text-align:center; padding: 20px; color: var(--gray); font-size:.9rem;">
+      No kids added yet — ask a parent to add your name in Admin!
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     ADMIN LOGIN MODAL
+============================================================ -->
+<div class="overlay" id="adminLoginOverlay" onclick="closeOverlay('adminLoginOverlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <button class="close-btn" onclick="closeOverlay('adminLoginOverlay')">✕</button>
+    <div class="sheet-title">🔒 Admin Login</div>
+    <div class="sheet-sub">Parents only — enter your password to edit chores.</div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="adminPwInput" placeholder="Enter admin password"
+             onkeydown="if(event.key==='Enter') tryAdminLogin()" />
+    </div>
+    <div class="msg err" id="loginErr">❌ Incorrect password. Try again.</div>
+    <button class="btn btn-primary btn-full" onclick="tryAdminLogin()">Unlock Admin</button>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     ADMIN PANEL MODAL
+============================================================ -->
+<div class="overlay" id="adminPanelOverlay" onclick="closeOverlay('adminPanelOverlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <button class="close-btn" onclick="closeOverlay('adminPanelOverlay')">✕</button>
+    <div class="sheet-title">⚙️ Admin Panel</div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="chores"   onclick="switchTab(this,'chores')">🧹 Chores</div>
+      <div class="tab"        data-tab="kids"     onclick="switchTab(this,'kids')">👧 Kids</div>
+      <div class="tab"        data-tab="settings" onclick="switchTab(this,'settings')">⚙️ Settings</div>
+    </div>
+
+    <!-- ── CHORES TAB ─────────────────────────── -->
+    <div id="tab-chores">
+      <div id="adminChoreList"></div>
+      <hr>
+      <div style="font-weight:800; font-size:1rem; margin-bottom:12px;">➕ Add New Chore</div>
+      <div class="form-group">
+        <label>Chore Name</label>
+        <input type="text" id="newChoreName" placeholder="e.g. Vacuum the living room"
+               onkeydown="if(event.key==='Enter') addChore()" />
+      </div>
+      <div class="form-group">
+        <label>How Often?</label>
+        <select id="newChoreFreq">
+          <option value="daily">Daily</option>
+          <option value="weekly" selected>Weekly</option>
+          <option value="biweekly">Bi-Weekly (every 2 weeks)</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addChore()">Add Chore</button>
+      <hr>
+      <button class="btn btn-ghost btn-full" onclick="loadSampleChores()" style="font-size:.85rem;">
+        📋 Load Sample Chores (clears existing!)
+      </button>
+    </div>
+
+    <!-- ── KIDS TAB ───────────────────────────── -->
+    <div id="tab-kids" style="display:none">
+      <div id="adminKidList"></div>
+      <hr>
+      <div style="font-weight:800; font-size:1rem; margin-bottom:12px;">➕ Add a Kid</div>
+      <div class="form-group">
+        <label>Name</label>
+        <input type="text" id="newKidName" placeholder="e.g. Emma"
+               onkeydown="if(event.key==='Enter') addKid()" />
+      </div>
+      <button class="btn btn-primary btn-full" onclick="addKid()">Add Kid</button>
+    </div>
+
+    <!-- ── SETTINGS TAB ───────────────────────── -->
+    <div id="tab-settings" style="display:none">
+
+      <div style="font-weight:800; font-size:1rem; margin-bottom:12px;">🏠 Family Name</div>
+      <div class="form-group">
+        <label>Displayed in the header</label>
+        <input type="text" id="settingFamilyName" placeholder="e.g. The Smith Family" />
+      </div>
+      <button class="btn btn-ghost" onclick="saveFamilyName()">Save Name</button>
+
+      <hr>
+
+      <div style="font-weight:800; font-size:1rem; margin-bottom:12px;">🔑 Change Admin Password</div>
+      <div class="form-group">
+        <label>New Password</label>
+        <input type="password" id="newPw1" placeholder="New password" />
+      </div>
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input type="password" id="newPw2" placeholder="Confirm new password" />
+      </div>
+      <div class="msg ok"  id="pwOkMsg">✅ Password changed!</div>
+      <div class="msg err" id="pwErrMsg">❌ Passwords don't match.</div>
+      <button class="btn btn-primary" onclick="changePassword()">Change Password</button>
+
+      <hr>
+
+      <div style="font-weight:800; font-size:1rem; margin-bottom:8px;">🔌 Sync Status</div>
+      <div id="syncStatusChip"></div>
+      <p style="font-size:.8rem; color:var(--gray); margin-top:8px; line-height:1.5;">
+        Open this HTML file in a text editor and fill in the
+        <code style="background:var(--gray-lt); padding:1px 5px; border-radius:4px;">FIREBASE_CONFIG</code>
+        block near the top of the script to enable real-time sync across all phones.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ============================================================
+     EDIT CHORE MODAL
+============================================================ -->
+<div class="overlay" id="editChoreOverlay" onclick="closeOverlay('editChoreOverlay')">
+  <div class="sheet" onclick="event.stopPropagation()">
+    <button class="close-btn" onclick="closeOverlay('editChoreOverlay')">✕</button>
+    <div class="sheet-title">✏️ Edit Chore</div>
+    <input type="hidden" id="editChoreId" />
+    <div class="form-group">
+      <label>Chore Name</label>
+      <input type="text" id="editChoreName" placeholder="Chore name" />
+    </div>
+    <div class="form-group">
+      <label>How Often?</label>
+      <select id="editChoreFreq">
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="biweekly">Bi-Weekly (every 2 weeks)</option>
+        <option value="monthly">Monthly</option>
+        <option value="yearly">Yearly</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Reset completion (uncheck to keep history)</label>
+      <select id="editChoreReset">
+        <option value="no">Keep existing history</option>
+        <option value="yes">Reset — mark as never done</option>
+      </select>
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="saveEditChore()">Save</button>
+      <button class="btn btn-danger"  onclick="confirmDeleteChore()">🗑 Delete</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+
+/* ============================================================
+   FIREBASE CONFIGURATION
+============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyAxpBLv8BGfQsEohqYmIHdRBRj0SMxe--U",
+  authDomain:        "family-chores-77e6a.firebaseapp.com",
+  databaseURL:       "https://family-chores-77e6a-default-rtdb.firebaseio.com",
+  projectId:         "family-chores-77e6a",
+  storageBucket:     "family-chores-77e6a.firebasestorage.app",
+  messagingSenderId: "389385036485",
+  appId:             "1:389385036485:web:e6d4d3b55c3c4bb05986ac"
+};
+
+/* ============================================================
+   CONSTANTS
+============================================================ */
+const DEFAULT_PASSWORD = "family123";
+
+const FREQ_MS = {
+  daily:    1  * 24 * 60 * 60 * 1000,
+  weekly:   7  * 24 * 60 * 60 * 1000,
+  biweekly: 14 * 24 * 60 * 60 * 1000,
+  monthly:  30 * 24 * 60 * 60 * 1000,
+  yearly:   365* 24 * 60 * 60 * 1000
+};
+const FREQ_LABELS = {
+  daily: "Daily", weekly: "Weekly",
+  biweekly: "Bi-Weekly", monthly: "Monthly", yearly: "Yearly"
+};
+const KID_AVATARS = ["🐱","🐶","🐸","🦊","🐼","🐨","🦁","🐯","🐰","🐻","🐳","🦋"];
+
+const SAMPLE_CHORES = [
+  { name: "Wash the dishes",         frequency: "daily"    },
+  { name: "Wipe down counters",       frequency: "daily"    },
+  { name: "Feed the pets",            frequency: "daily"    },
+  { name: "Vacuum living room",       frequency: "weekly"   },
+  { name: "Clean the bathroom",       frequency: "weekly"   },
+  { name: "Take out the trash",       frequency: "weekly"   },
+  { name: "Mop the floors",           frequency: "weekly"   },
+  { name: "Do the laundry",           frequency: "weekly"   },
+  { name: "Dust furniture",           frequency: "biweekly" },
+  { name: "Mow the lawn",             frequency: "biweekly" },
+  { name: "Clean windows",            frequency: "monthly"  },
+  { name: "Organise the pantry",      frequency: "monthly"  },
+  { name: "Deep clean refrigerator",  frequency: "monthly"  },
+  { name: "Clean out the gutters",    frequency: "yearly"   }
+];
+
+
+/* ============================================================
+   APP STATE
+============================================================ */
+let db            = null;
+let usingFirebase = false;
+let choresData    = {};
+let kidsData      = {};
+let settingsData  = { adminPassword: DEFAULT_PASSWORD, familyName: "Tidy Squad" };
+let claimingChoreId = null;
+
+
+/* ============================================================
+   BOOT
+============================================================ */
+(function init() {
+  updateDateDisplay();
+  setInterval(updateDateDisplay, 60_000);
+  setInterval(() => { if (Object.keys(choresData).length) renderAll(); }, 60_000);
+
+  const configured = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
+
+  if (configured) {
+    try {
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.database();
+      usingFirebase = true;
+      attachFirebaseListeners();
+    } catch (e) {
+      console.error("Firebase init failed:", e);
+      fallbackToLocal();
+    }
+  } else {
+    fallbackToLocal();
+  }
+})();
+
+
+/* ─── Firebase listeners ─────────────────────────────────── */
+function attachFirebaseListeners() {
+  db.ref("chores").on("value", snap => {
+    choresData = snap.val() || {};
+    doneLoading();
+  });
+  db.ref("kids").on("value", snap => {
+    kidsData = snap.val() || {};
+  });
+  db.ref("settings").on("value", snap => {
+    if (snap.val()) {
+      settingsData = snap.val();
+      applySettings();
+    }
+  });
+}
+
+/* ─── Local storage fallback ─────────────────────────────── */
+function fallbackToLocal() {
+  document.getElementById("setupBanner").style.display = "block";
+  choresData   = JSON.parse(localStorage.getItem("cc_chores")   || "{}");
+  kidsData     = JSON.parse(localStorage.getItem("cc_kids")     || "{}");
+  settingsData = JSON.parse(localStorage.getItem("cc_settings") || JSON.stringify(settingsData));
+  applySettings();
+  doneLoading();
+}
+
+function saveLocal() {
+  if (!usingFirebase) {
+    localStorage.setItem("cc_chores",   JSON.stringify(choresData));
+    localStorage.setItem("cc_kids",     JSON.stringify(kidsData));
+    localStorage.setItem("cc_settings", JSON.stringify(settingsData));
+  }
+}
+
+function doneLoading() {
+  document.getElementById("loadingState").style.display  = "none";
+  document.getElementById("mainContent").style.display   = "block";
+  renderAll();
+}
+
+function applySettings() {
+  document.getElementById("familyNameDisplay").textContent =
+    settingsData.familyName || "Family Chore Chart";
+}
+
+
+/* ============================================================
+   DATABASE HELPERS
+============================================================ */
+async function dbSet(path, value) {
+  if (usingFirebase) {
+    await db.ref(path).set(value);
+  } else {
+    setNestedValue(path, value);
+    saveLocal();
+    renderAll();
+  }
+}
+async function dbRemove(path) {
+  if (usingFirebase) {
+    await db.ref(path).remove();
+  } else {
+    removeNestedValue(path);
+    saveLocal();
+    renderAll();
+  }
+}
+async function dbPush(path, value) {
+  if (usingFirebase) {
+    await db.ref(path).push(value);
+  } else {
+    const id = "id_" + Date.now() + "_" + Math.random().toString(36).slice(2,7);
+    setNestedValue(path + "/" + id, value);
+    saveLocal();
+    renderAll();
+  }
+}
+
+function setNestedValue(path, value) {
+  const parts = path.split("/").filter(Boolean);
+  let root = getRoot(parts[0]);
+  if (parts.length === 1) {
+    if (typeof value === "object" && !Array.isArray(value)) Object.assign(root, value);
+    return;
+  }
+  let cur = root;
+  for (let i = 1; i < parts.length - 1; i++) {
+    if (!cur[parts[i]]) cur[parts[i]] = {};
+    cur = cur[parts[i]];
+  }
+  cur[parts[parts.length - 1]] = value;
+}
+function removeNestedValue(path) {
+  const parts = path.split("/").filter(Boolean);
+  let root = getRoot(parts[0]);
+  if (parts.length === 1) return;
+  let cur = root;
+  for (let i = 1; i < parts.length - 1; i++) cur = cur[parts[i]];
+  delete cur[parts[parts.length - 1]];
+}
+function getRoot(key) {
+  if (key === "chores")   return choresData;
+  if (key === "kids")     return kidsData;
+  if (key === "settings") return settingsData;
+  return {};
+}
+
+
+/* ============================================================
+   STATUS CALCULATION
+============================================================ */
+function choreStatus(chore) {
+  if (!chore.lastCompleted) return "overdue";
+  const elapsed  = Date.now() - chore.lastCompleted;
+  const freqMs   = FREQ_MS[chore.frequency] || FREQ_MS.weekly;
+  if (elapsed >= freqMs)          return "overdue";
+  if (elapsed >= freqMs * 0.75)   return "soon";
+  return "done";
+}
+
+function timeText(chore) {
+  if (!chore.lastCompleted) return "Never done yet";
+  const elapsed = Date.now() - chore.lastCompleted;
+  const freqMs  = FREQ_MS[chore.frequency] || FREQ_MS.weekly;
+  const remaining = freqMs - elapsed;
+  if (elapsed >= freqMs)
+    return "Overdue by " + humanize(elapsed - freqMs);
+  if (elapsed >= freqMs * 0.75)
+    return "Due in " + humanize(remaining);
+  return "Done " + humanize(elapsed) + " ago";
+}
+
+function humanize(ms) {
+  const mins  = Math.floor(ms / 60_000);
+  const hrs   = Math.floor(ms / 3_600_000);
+  const days  = Math.floor(ms / 86_400_000);
+  const weeks = Math.floor(days / 7);
+  const months= Math.floor(days / 30);
+  if (months >= 1)   return months  + (months  === 1 ? " month"  : " months");
+  if (weeks  >= 1)   return weeks   + (weeks   === 1 ? " week"   : " weeks");
+  if (days   >= 1)   return days    + (days    === 1 ? " day"    : " days");
+  if (hrs    >= 1)   return hrs     + (hrs     === 1 ? " hour"   : " hours");
+  if (mins   >= 1)   return mins    + (mins    === 1 ? " minute" : " minutes");
+  return "just now";
+}
+
+
+/* ============================================================
+   RENDER ALL
+============================================================ */
+function renderAll() {
+  const overdue = [], soon = [], done = [];
+
+  Object.entries(choresData).forEach(([id, chore]) => {
+    const status = choreStatus(chore);
+    const item   = { id, ...chore };
+    if (status === "overdue") overdue.push(item);
+    else if (status === "soon") soon.push(item);
+    else done.push(item);
+  });
+
+  // Sort done by most recently completed
+  done.sort((a, b) => (b.lastCompleted || 0) - (a.lastCompleted || 0));
+
+  renderSection("overdue", overdue);
+  renderSection("soon",    soon);
+  renderSection("done",    done);
+
+  // Refresh admin list if panel is open
+  if (document.getElementById("adminPanelOverlay").classList.contains("open")) {
+    renderAdminChoreList();
+  }
+}
+
+function renderSection(type, items) {
+  document.getElementById("cnt-" + type).textContent = items.length;
+  const container = document.getElementById("list-" + type);
+
+  if (!items.length) {
+    const msgs = {
+      overdue: "🎉 Nothing overdue right now!",
+      soon:    "👍 No chores coming up soon",
+      done:    "No completed chores yet"
+    };
+    container.innerHTML = `<div class="empty-state">${msgs[type]}</div>`;
+    return;
+  }
+
+  container.innerHTML = items.map(chore => {
+    const freq   = FREQ_LABELS[chore.frequency] || chore.frequency;
+    const tText  = timeText(chore);
+    const isDone = type === "done";
+    const btnCls = isDone ? "redo" : type;
+    const btnLbl = type === "overdue" ? "🙋 I did this!"
+                 : type === "soon"    ? "🙋 Mark as done"
+                 :                      "🔄 Done again";
+    const doneByHtml = isDone && chore.lastCompletedBy
+      ? `<div class="done-by">✓ Completed by ${escHtml(chore.lastCompletedBy)}</div>`
+      : "";
+
+    return `<div class="chore-card ${type}" data-id="${chore.id}">
+      <div class="chore-name">${escHtml(chore.name)}</div>
+      <div class="chore-meta">
+        <span class="freq-tag">${freq}</span>
+        <span class="time-text">${tText}</span>
+      </div>
+      ${doneByHtml}
+      <button class="claim-btn ${btnCls}" onclick="openClaimModal('${escAttr(chore.id)}','${escAttr(chore.name)}')">
+        ${btnLbl}
+      </button>
+    </div>`;
+  }).join("");
+}
+
+
+/* ============================================================
+   CLAIM MODAL
+============================================================ */
+function openClaimModal(choreId, choreName) {
+  claimingChoreId = choreId;
+  document.getElementById("claimChoreSub").textContent = "Chore: " + choreName;
+
+  const kids = Object.entries(kidsData);
+  const grid = document.getElementById("kidPickerGrid");
+  const noMsg = document.getElementById("noKidsMsg");
+
+  if (!kids.length) {
+    grid.innerHTML = "";
+    noMsg.style.display = "block";
+  } else {
+    noMsg.style.display = "none";
+    grid.innerHTML = kids.map(([id, kid], i) => `
+      <button class="kid-tile" onclick="claimChore('${escAttr(kid.name)}')">
+        <span class="av">${KID_AVATARS[i % KID_AVATARS.length]}</span>
+        <span class="nm">${escHtml(kid.name)}</span>
+      </button>`).join("");
+  }
+
+  openOverlay("claimOverlay");
+}
+
+async function claimChore(kidName) {
+  if (!claimingChoreId) return;
+  const choreRef = `chores/${claimingChoreId}`;
+  await dbSet(choreRef + "/lastCompleted",   Date.now());
+  await dbSet(choreRef + "/lastCompletedBy", kidName);
+  closeOverlay("claimOverlay");
+  showToast("Awesome work, " + kidName + "! 🎉");
+  claimingChoreId = null;
+}
+
+
+/* ============================================================
+   ADMIN LOGIN
+============================================================ */
+function openAdminLogin() {
+  document.getElementById("adminPwInput").value = "";
+  hide("loginErr");
+  openOverlay("adminLoginOverlay");
+  setTimeout(() => document.getElementById("adminPwInput").focus(), 350);
+}
+
+function tryAdminLogin() {
+  const entered = document.getElementById("adminPwInput").value;
+  const stored  = settingsData.adminPassword || DEFAULT_PASSWORD;
+  if (entered === stored) {
+    closeOverlay("adminLoginOverlay");
+    openAdminPanel();
+  } else {
+    show("loginErr");
+  }
+}
+
+
+/* ============================================================
+   ADMIN PANEL
+============================================================ */
+function openAdminPanel() {
+  renderAdminChoreList();
+  renderAdminKidList();
+  document.getElementById("settingFamilyName").value = settingsData.familyName || "";
+  const chip = document.getElementById("syncStatusChip");
+  if (usingFirebase) {
+    chip.innerHTML = `<span class="status-chip connected"><span class="status-dot"></span>Connected — syncing in real time ✅</span>`;
+  } else {
+    chip.innerHTML = `<span class="status-chip disconnected"><span class="status-dot"></span>Local only — not synced across phones ⚠️</span>`;
+  }
+  openOverlay("adminPanelOverlay");
+}
+
+function switchTab(el, name) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+  el.classList.add("active");
+  ["chores","kids","settings"].forEach(t => {
+    document.getElementById("tab-" + t).style.display = t === name ? "block" : "none";
+  });
+}
+
+/* ── Chores Tab ────────────────────────────────────────────── */
+function renderAdminChoreList() {
+  const el = document.getElementById("adminChoreList");
+  const entries = Object.entries(choresData);
+  if (!entries.length) {
+    el.innerHTML = `<p style="color:var(--gray);text-align:center;padding:12px;">No chores yet — add some below.</p>`;
+    return;
+  }
+  el.innerHTML = entries.map(([id, chore]) => `
+    <div class="list-item">
+      <div class="li-left">
+        <div class="li-name">${escHtml(chore.name)}</div>
+        <div class="li-sub">${FREQ_LABELS[chore.frequency] || chore.frequency}</div>
+      </div>
+      <div class="li-actions">
+        <button class="icon-btn" onclick="openEditChore('${escAttr(id)}','${escAttr(chore.name)}','${chore.frequency}')">✏️</button>
+      </div>
+    </div>`).join("");
+}
+
+async function addChore() {
+  const name = document.getElementById("newChoreName").value.trim();
+  const freq = document.getElementById("newChoreFreq").value;
+  if (!name) { showToast("Please enter a chore name"); return; }
+  await dbPush("chores", { name, frequency: freq, lastCompleted: null, lastCompletedBy: null });
+  document.getElementById("newChoreName").value = "";
+  showToast("Chore added ✅");
+  renderAdminChoreList();
+}
+
+async function loadSampleChores() {
+  if (!confirm("This will replace ALL existing chores with sample chores. Continue?")) return;
+  // Remove existing
+  if (usingFirebase) {
+    await db.ref("chores").remove();
+  } else {
+    choresData = {};
+  }
+  for (const chore of SAMPLE_CHORES) {
+    await dbPush("chores", { ...chore, lastCompleted: null, lastCompletedBy: null });
+  }
+  showToast("Sample chores loaded! ✅");
+  renderAdminChoreList();
+}
+
+/* ── Edit Chore Modal ──────────────────────────────────────── */
+function openEditChore(id, name, freq) {
+  document.getElementById("editChoreId").value   = id;
+  document.getElementById("editChoreName").value = name;
+  document.getElementById("editChoreFreq").value  = freq;
+  document.getElementById("editChoreReset").value = "no";
+  openOverlay("editChoreOverlay");
+}
+
+async function saveEditChore() {
+  const id    = document.getElementById("editChoreId").value;
+  const name  = document.getElementById("editChoreName").value.trim();
+  const freq  = document.getElementById("editChoreFreq").value;
+  const reset = document.getElementById("editChoreReset").value;
+  if (!name) { showToast("Please enter a chore name"); return; }
+  await dbSet(`chores/${id}/name`,      name);
+  await dbSet(`chores/${id}/frequency`, freq);
+  if (reset === "yes") {
+    await dbSet(`chores/${id}/lastCompleted`,   null);
+    await dbSet(`chores/${id}/lastCompletedBy`, null);
+  }
+  closeOverlay("editChoreOverlay");
+  showToast("Chore updated ✅");
+  renderAdminChoreList();
+}
+
+async function confirmDeleteChore() {
+  const id   = document.getElementById("editChoreId").value;
+  const name = document.getElementById("editChoreName").value;
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  await dbRemove(`chores/${id}`);
+  closeOverlay("editChoreOverlay");
+  showToast("Chore deleted");
+  renderAdminChoreList();
+}
+
+/* ── Kids Tab ──────────────────────────────────────────────── */
+function renderAdminKidList() {
+  const el = document.getElementById("adminKidList");
+  const entries = Object.entries(kidsData);
+  if (!entries.length) {
+    el.innerHTML = `<p style="color:var(--gray);text-align:center;padding:12px;">No kids added yet.</p>`;
+    return;
+  }
+  el.innerHTML = entries.map(([id, kid], i) => `
+    <div class="list-item">
+      <div class="li-left">
+        <div class="li-name">${KID_AVATARS[i % KID_AVATARS.length]} ${escHtml(kid.name)}</div>
+      </div>
+      <div class="li-actions">
+        <button class="icon-btn" onclick="removeKid('${escAttr(id)}','${escAttr(kid.name)}')">🗑️</button>
+      </div>
+    </div>`).join("");
+}
+
+async function addKid() {
+  const name = document.getElementById("newKidName").value.trim();
+  if (!name) { showToast("Please enter a name"); return; }
+  await dbPush("kids", { name });
+  document.getElementById("newKidName").value = "";
+  showToast(name + " added! 👋");
+  renderAdminKidList();
+}
+
+async function removeKid(id, name) {
+  if (!confirm(`Remove ${name} from the list?`)) return;
+  await dbRemove(`kids/${id}`);
+  renderAdminKidList();
+  showToast("Removed");
+}
+
+/* ── Settings Tab ──────────────────────────────────────────── */
+async function saveFamilyName() {
+  const val = document.getElementById("settingFamilyName").value.trim();
+  if (!val) return;
+  settingsData.familyName = val;
+  await dbSet("settings/familyName", val);
+  applySettings();
+  showToast("Family name saved ✅");
+}
+
+async function changePassword() {
+  hide("pwOkMsg"); hide("pwErrMsg");
+  const p1 = document.getElementById("newPw1").value;
+  const p2 = document.getElementById("newPw2").value;
+  if (!p1 || p1 !== p2) { show("pwErrMsg"); return; }
+  settingsData.adminPassword = p1;
+  await dbSet("settings/adminPassword", p1);
+  document.getElementById("newPw1").value = "";
+  document.getElementById("newPw2").value = "";
+  show("pwOkMsg");
+  setTimeout(() => hide("pwOkMsg"), 3000);
+}
+
+
+/* ============================================================
+   OVERLAY HELPERS
+============================================================ */
+function openOverlay(id)  { document.getElementById(id).classList.add("open"); }
+function closeOverlay(id) { document.getElementById(id).classList.remove("open"); }
+
+
+/* ============================================================
+   TOAST
+============================================================ */
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+
+/* ============================================================
+   DATE DISPLAY
+============================================================ */
+function updateDateDisplay() {
+  document.getElementById("dateDisplay").textContent =
+    new Date().toLocaleDateString("en-US",
+      { weekday:"long", year:"numeric", month:"long", day:"numeric" });
+}
+
+
+/* ============================================================
+   UTILITIES
+============================================================ */
+function show(id) { document.getElementById(id).style.display = "block"; }
+function hide(id) { document.getElementById(id).style.display = "none"; }
+
+function escHtml(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function escAttr(str) {
+  if (!str) return "";
+  return String(str)
+    .replace(/\\/g,"\\\\").replace(/'/g,"\\'")
+    .replace(/"/g,"&quot;");
+}
+
+</script>
+</body>
+</html>
