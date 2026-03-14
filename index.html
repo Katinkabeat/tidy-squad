@@ -479,10 +479,82 @@
     .section { animation: fadeIn .3s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
+    /* ============================================================
+       PIN SCREEN
+    ============================================================ */
+    #pinScreen {
+      display: none;
+      position: fixed; inset: 0; z-index: 9999;
+      background: linear-gradient(145deg, #4F46E5 0%, #7C3AED 50%, #9333EA 100%);
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    #pinScreen.show { display: flex; }
+    .pin-logo { font-size: 4rem; margin-bottom: 10px; }
+    .pin-title { color: #fff; font-size: 1.8rem; font-weight: 900; margin-bottom: 4px; }
+    .pin-sub { color: rgba(255,255,255,.75); font-size: .9rem; margin-bottom: 28px; text-align: center; }
+    .pin-dots { display: flex; gap: 18px; margin-bottom: 28px; }
+    .pin-dot {
+      width: 20px; height: 20px; border-radius: 50%;
+      background: rgba(255,255,255,.25);
+      border: 2px solid rgba(255,255,255,.6);
+      transition: background .15s, transform .1s;
+    }
+    .pin-dot.filled { background: #fff; transform: scale(1.15); }
+    .pin-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 252px; }
+    .pin-key {
+      background: rgba(255,255,255,.18);
+      border: 1.5px solid rgba(255,255,255,.35);
+      color: #fff;
+      font-size: 1.5rem;
+      font-weight: 700;
+      padding: 18px 0;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background .12s, transform .1s;
+      user-select: none;
+    }
+    .pin-key:active { background: rgba(255,255,255,.38); transform: scale(.94); }
+    .pin-key.del { font-size: 1.1rem; }
+    .pin-key.empty { background: transparent; border-color: transparent; pointer-events: none; }
+    .pin-err { color: #FCA5A5; font-size: .9rem; margin-top: 14px; min-height: 22px; font-weight: 600; }
+
   </style>
 </head>
 
 <body>
+
+<!-- ============================================================
+     PIN SCREEN
+============================================================ -->
+<div id="pinScreen">
+  <div class="pin-logo">🧹</div>
+  <div class="pin-title">Tidy Squad</div>
+  <div class="pin-sub">Enter your family PIN to continue</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="pd0"></div>
+    <div class="pin-dot" id="pd1"></div>
+    <div class="pin-dot" id="pd2"></div>
+    <div class="pin-dot" id="pd3"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pinKey('1')">1</button>
+    <button class="pin-key" onclick="pinKey('2')">2</button>
+    <button class="pin-key" onclick="pinKey('3')">3</button>
+    <button class="pin-key" onclick="pinKey('4')">4</button>
+    <button class="pin-key" onclick="pinKey('5')">5</button>
+    <button class="pin-key" onclick="pinKey('6')">6</button>
+    <button class="pin-key" onclick="pinKey('7')">7</button>
+    <button class="pin-key" onclick="pinKey('8')">8</button>
+    <button class="pin-key" onclick="pinKey('9')">9</button>
+    <button class="pin-key empty"></button>
+    <button class="pin-key" onclick="pinKey('0')">0</button>
+    <button class="pin-key del" onclick="pinBackspace()">⌫</button>
+  </div>
+  <div class="pin-err" id="pinErr"></div>
+</div>
 
 <!-- ============================================================
      HEADER
@@ -669,6 +741,18 @@
 
       <hr>
 
+      <div style="font-weight:800; font-size:1rem; margin-bottom:12px;">🔢 Change Family PIN</div>
+      <div style="font-size:.82rem; color:var(--gray); margin-bottom:10px;">This PIN is required to open the app on any phone. Default is 1234.</div>
+      <div class="form-group">
+        <label>New 4-digit PIN</label>
+        <input type="password" id="newPin" placeholder="e.g. 5678" maxlength="4" inputmode="numeric" pattern="[0-9]*" />
+      </div>
+      <div class="msg ok"  id="pinOkMsg">✅ PIN changed!</div>
+      <div class="msg err" id="pinErrMsg">❌ PIN must be exactly 4 digits.</div>
+      <button class="btn btn-primary" onclick="changeFamilyPin()">Change PIN</button>
+
+      <hr>
+
       <div style="font-weight:800; font-size:1rem; margin-bottom:8px;">🔌 Sync Status</div>
       <div id="syncStatusChip"></div>
       <p style="font-size:.8rem; color:var(--gray); margin-top:8px; line-height:1.5;">
@@ -784,7 +868,7 @@ let db            = null;
 let usingFirebase = false;
 let choresData    = {};
 let kidsData      = {};
-let settingsData  = { adminPassword: DEFAULT_PASSWORD, familyName: "Tidy Squad" };
+let settingsData  = { adminPassword: DEFAULT_PASSWORD, familyName: "Tidy Squad", familyPin: "1234" };
 let claimingChoreId = null;
 
 
@@ -792,6 +876,7 @@ let claimingChoreId = null;
    BOOT
 ============================================================ */
 (function init() {
+  initPinGate();
   updateDateDisplay();
   setInterval(updateDateDisplay, 60_000);
   setInterval(() => { if (Object.keys(choresData).length) renderAll(); }, 60_000);
@@ -1250,6 +1335,60 @@ async function changePassword() {
   document.getElementById("newPw2").value = "";
   show("pwOkMsg");
   setTimeout(() => hide("pwOkMsg"), 3000);
+}
+
+
+/* ============================================================
+   PIN GATE
+============================================================ */
+const PIN_SESSION_KEY = "ts_unlocked";
+let pinBuffer = "";
+
+function initPinGate() {
+  if (sessionStorage.getItem(PIN_SESSION_KEY) === "1") return; // already unlocked this session
+  document.getElementById("pinScreen").classList.add("show");
+}
+
+function pinKey(digit) {
+  if (pinBuffer.length >= 4) return;
+  pinBuffer += digit;
+  updatePinDots();
+  if (pinBuffer.length === 4) setTimeout(checkPin, 120);
+}
+
+function pinBackspace() {
+  pinBuffer = pinBuffer.slice(0, -1);
+  updatePinDots();
+  document.getElementById("pinErr").textContent = "";
+}
+
+function updatePinDots() {
+  for (let i = 0; i < 4; i++) {
+    document.getElementById("pd" + i).classList.toggle("filled", i < pinBuffer.length);
+  }
+}
+
+function checkPin() {
+  const stored = settingsData.familyPin || "1234";
+  if (pinBuffer === stored) {
+    sessionStorage.setItem(PIN_SESSION_KEY, "1");
+    document.getElementById("pinScreen").classList.remove("show");
+  } else {
+    document.getElementById("pinErr").textContent = "❌ Wrong PIN — try again";
+    pinBuffer = "";
+    updatePinDots();
+  }
+}
+
+async function changeFamilyPin() {
+  hide("pinOkMsg"); hide("pinErrMsg");
+  const p = document.getElementById("newPin").value.trim();
+  if (!/^\d{4}$/.test(p)) { show("pinErrMsg"); return; }
+  settingsData.familyPin = p;
+  await dbSet("settings/familyPin", p);
+  document.getElementById("newPin").value = "";
+  show("pinOkMsg");
+  setTimeout(() => hide("pinOkMsg"), 3000);
 }
 
 
