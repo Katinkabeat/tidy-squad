@@ -1515,7 +1515,7 @@ function renderAll() {
     const status = choreStatus(chore);
     const days   = daysUntilDue(chore);
     const item   = { id, ...chore, _status: status, _days: days };
-    if      (days <= 7)  buckets.week.push(item);
+    if      (days < 7)   buckets.week.push(item);
     else if (days <= 14) buckets.twoweeks.push(item);
     else                 buckets.later.push(item);
   });
