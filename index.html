@@ -207,6 +207,47 @@
     .due-date-text.overdue { color: var(--red);   font-weight: 700; }
     .due-date-text.soon    { color: var(--amber);  font-weight: 700; }
 
+    /* ── Points badge on chore cards ── */
+    .points-badge {
+      display: inline-flex; align-items: center; gap: 2px;
+      background: #FEF9C3; color: #854d0e;
+      border-radius: 10px; padding: 2px 7px;
+      font-size: .72rem; font-weight: 800;
+      vertical-align: middle;
+    }
+
+    /* ── Leaderboard ── */
+    .leaderboard { margin-bottom: 22px; }
+    .lb-title {
+      font-weight: 800; font-size: 1rem; color: #fff;
+      margin-bottom: 10px; text-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+    .lb-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: rgba(255,255,255,.18); border-radius: 12px;
+      padding: 10px 14px; margin-bottom: 8px;
+    }
+    .lb-rank  { font-size: 1.1rem; margin-right: 8px; }
+    .lb-name  { color: #fff; font-weight: 700; font-size: .95rem; flex: 1; }
+    .lb-pts   { color: #fde68a; font-weight: 800; font-size: 1rem; white-space: nowrap; }
+    .lb-empty { color: rgba(255,255,255,.6); font-size: .88rem; padding: 8px 0; }
+
+    /* ── Points in claim modal kid tiles ── */
+    .kid-tile .pt { font-size: .72rem; color: var(--purple); font-weight: 700; margin-top: 2px; }
+
+    /* ── Star rating select in admin forms ── */
+    .star-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+    .star-opt input[type="radio"] { display: none; }
+    .star-opt label {
+      display: block; width: 42px; text-align: center;
+      padding: 6px 4px; border: 2px solid #E5E7EB; border-radius: 10px;
+      cursor: pointer; font-size: .8rem; font-weight: 700; color: var(--gray);
+      transition: all .15s;
+    }
+    .star-opt input[type="radio"]:checked + label {
+      background: #FEF9C3; border-color: #D97706; color: #854d0e;
+    }
+
     .claim-btn {
       margin-top: 10px;
       width: 100%;
@@ -615,6 +656,12 @@
 ============================================================ -->
 <div class="main" id="mainContent" style="display:none">
 
+  <!-- LEADERBOARD -->
+  <div class="leaderboard" id="leaderboardSection">
+    <div class="lb-title">🏆 Leaderboard</div>
+    <div id="leaderboardList"></div>
+  </div>
+
   <!-- OVERDUE -->
   <div class="section" id="sec-overdue">
     <div class="section-head">
@@ -727,6 +774,16 @@
         <label>First due date</label>
         <input type="date" id="newAnchorDate" />
       </div>
+      <div class="form-group">
+        <label>Effort Points (how hard is this chore?)</label>
+        <div class="star-row">
+          <span class="star-opt"><input type="radio" name="newPoints" id="newPts1" value="1" checked><label for="newPts1">⭐<br>1</label></span>
+          <span class="star-opt"><input type="radio" name="newPoints" id="newPts2" value="2"><label for="newPts2">⭐⭐<br>2</label></span>
+          <span class="star-opt"><input type="radio" name="newPoints" id="newPts3" value="3"><label for="newPts3">⭐⭐⭐<br>3</label></span>
+          <span class="star-opt"><input type="radio" name="newPoints" id="newPts4" value="4"><label for="newPts4">⭐⭐⭐⭐<br>4</label></span>
+          <span class="star-opt"><input type="radio" name="newPoints" id="newPts5" value="5"><label for="newPts5">⭐⭐⭐⭐⭐<br>5</label></span>
+        </div>
+      </div>
       <button class="btn btn-primary btn-full" onclick="addChore()">Add Chore</button>
       <hr>
       <button class="btn btn-ghost btn-full" onclick="loadSampleChores()" style="font-size:.85rem;">
@@ -828,6 +885,16 @@
     <div class="form-group" id="editAnchorDateWrap" style="display:none">
       <label>First due date</label>
       <input type="date" id="editAnchorDate" />
+    </div>
+    <div class="form-group">
+      <label>Effort Points (how hard is this chore?)</label>
+      <div class="star-row">
+        <span class="star-opt"><input type="radio" name="editPoints" id="editPts1" value="1"><label for="editPts1">⭐<br>1</label></span>
+        <span class="star-opt"><input type="radio" name="editPoints" id="editPts2" value="2"><label for="editPts2">⭐⭐<br>2</label></span>
+        <span class="star-opt"><input type="radio" name="editPoints" id="editPts3" value="3"><label for="editPts3">⭐⭐⭐<br>3</label></span>
+        <span class="star-opt"><input type="radio" name="editPoints" id="editPts4" value="4"><label for="editPts4">⭐⭐⭐⭐<br>4</label></span>
+        <span class="star-opt"><input type="radio" name="editPoints" id="editPts5" value="5"><label for="editPts5">⭐⭐⭐⭐⭐<br>5</label></span>
+      </div>
     </div>
     <div class="form-group">
       <label>Reset completion (uncheck to keep history)</label>
@@ -1251,6 +1318,35 @@ function humanize(ms) {
 
 
 /* ============================================================
+   LEADERBOARD
+============================================================ */
+function renderLeaderboard() {
+  const el      = document.getElementById("leaderboardList");
+  const section = document.getElementById("leaderboardSection");
+  const entries = Object.entries(kidsData);
+
+  if (!entries.length) {
+    section.style.display = "none";
+    return;
+  }
+  section.style.display = "block";
+
+  // Sort by totalPoints descending
+  const ranked = entries
+    .map(([, kid]) => ({ name: kid.name, pts: parseInt(kid.totalPoints) || 0 }))
+    .sort((a, b) => b.pts - a.pts);
+
+  const medals = ["🥇","🥈","🥉"];
+  el.innerHTML = ranked.map((p, i) => `
+    <div class="lb-row">
+      <span class="lb-rank">${medals[i] || (i + 1) + "."}</span>
+      <span class="lb-name">${escHtml(p.name)}</span>
+      <span class="lb-pts">⭐ ${p.pts} pts</span>
+    </div>`).join("");
+}
+
+
+/* ============================================================
    RENDER ALL
 ============================================================ */
 function renderAll() {
@@ -1270,6 +1366,7 @@ function renderAll() {
   renderSection("overdue", overdue);
   renderSection("soon",    soon);
   renderSection("done",    done);
+  renderLeaderboard();
 
   // Refresh admin list if panel is open
   if (document.getElementById("adminPanelOverlay").classList.contains("open")) {
@@ -1310,11 +1407,14 @@ function renderSection(type, items) {
     const dueTxt   = nextDueDateText(chore);
     const dueCls   = type === "overdue" ? "overdue" : type === "soon" ? "soon" : "";
 
+    const pts     = parseInt(chore.points) || 1;
+    const ptsStars = "⭐".repeat(pts);
     return `<div class="chore-card ${type}" data-id="${chore.id}">
       <div class="chore-name">${escHtml(chore.name)}</div>
       <div class="chore-meta">
         <span class="freq-tag">${freq}</span>
         <span class="time-text">${tText}</span>
+        <span class="points-badge">${ptsStars} ${pts} pt${pts !== 1 ? "s" : ""}</span>
       </div>
       ${doneByHtml}
       <div class="progress-wrap">
@@ -1345,11 +1445,15 @@ function openClaimModal(choreId, choreName) {
     noMsg.style.display = "block";
   } else {
     noMsg.style.display = "none";
-    grid.innerHTML = kids.map(([id, kid], i) => `
+    grid.innerHTML = kids.map(([id, kid], i) => {
+      const kidPts = parseInt(kid.totalPoints) || 0;
+      return `
       <button class="kid-tile" onclick="claimChore('${escAttr(kid.name)}')">
         <span class="av">${KID_AVATARS[i % KID_AVATARS.length]}</span>
         <span class="nm">${escHtml(kid.name)}</span>
-      </button>`).join("");
+        <span class="pt">⭐ ${kidPts} pts</span>
+      </button>`;
+    }).join("");
   }
 
   openOverlay("claimOverlay");
@@ -1360,8 +1464,18 @@ async function claimChore(kidName) {
   const choreRef = `chores/${claimingChoreId}`;
   await dbSet(choreRef + "/lastCompleted",   Date.now());
   await dbSet(choreRef + "/lastCompletedBy", kidName);
+
+  // Award points to this person
+  const pts = parseInt(choresData[claimingChoreId]?.points) || 1;
+  const kidEntry = Object.entries(kidsData).find(([, k]) => k.name === kidName);
+  if (kidEntry) {
+    const [kidId, kid] = kidEntry;
+    const newTotal = (parseInt(kid.totalPoints) || 0) + pts;
+    await dbSet(`kids/${kidId}/totalPoints`, newTotal);
+  }
+
   closeOverlay("claimOverlay");
-  showToast("Awesome work, " + kidName + "! 🎉");
+  showToast("Awesome work, " + kidName + "! +" + pts + " pt" + (pts !== 1 ? "s" : "") + " 🎉");
   claimingChoreId = null;
 }
 
@@ -1420,16 +1534,19 @@ function renderAdminChoreList() {
     el.innerHTML = `<p style="color:var(--gray);text-align:center;padding:12px;">No chores yet — add some below.</p>`;
     return;
   }
-  el.innerHTML = entries.map(([id, chore]) => `
+  el.innerHTML = entries.map(([id, chore]) => {
+    const pts = parseInt(chore.points) || 1;
+    return `
     <div class="list-item">
       <div class="li-left">
         <div class="li-name">${escHtml(chore.name)}</div>
-        <div class="li-sub">${FREQ_LABELS[chore.frequency] || chore.frequency}</div>
+        <div class="li-sub">${FREQ_LABELS[chore.frequency] || chore.frequency} &nbsp;·&nbsp; ${"⭐".repeat(pts)} ${pts} pt${pts !== 1 ? "s" : ""}</div>
       </div>
       <div class="li-actions">
         <button class="icon-btn" onclick="openEditChore('${escAttr(id)}')">✏️</button>
       </div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 }
 
 async function addChore() {
@@ -1438,15 +1555,18 @@ async function addChore() {
   const aDateVal  = document.getElementById("newAnchorDate").value;   // "YYYY-MM-DD" or ""
   const aWdayS    = document.getElementById("newAnchorWeekday").value;
   const aWday     = aWdayS !== "" ? parseInt(aWdayS) : null;
+  const ptsEl     = document.querySelector('input[name="newPoints"]:checked');
+  const pts       = ptsEl ? parseInt(ptsEl.value) : 1;
   if (!name) { showToast("Please enter a chore name"); return; }
   const usesDate  = freq === "biweekly" || freq === "monthly" || freq === "yearly";
-  const chore = { name, frequency: freq, lastCompleted: null, lastCompletedBy: null,
+  const chore = { name, frequency: freq, points: pts, lastCompleted: null, lastCompletedBy: null,
                   anchorDate:    usesDate                               ? (aDateVal || null) : null,
                   anchorWeekday: (freq === "weekly")                    ? aWday              : null };
   await dbPush("chores", chore);
   document.getElementById("newChoreName").value  = "";
   document.getElementById("newAnchorDate").value = "";
   document.getElementById("newAnchorWeekday").value = "";
+  document.getElementById("newPts1").checked = true; // reset to 1 star
   showToast("Chore added ✅");
   renderAdminChoreList();
 }
@@ -1486,6 +1606,10 @@ function openEditChore(id) {
     const day = String(chore.anchorDay).padStart(2,"0");
     document.getElementById("editAnchorDate").value = `${yr}-${mon}-${day}`;
   }
+  // Set points radio (default 1 if not set)
+  const currentPts = parseInt(chore.points) || 1;
+  const ptsRadio = document.getElementById("editPts" + currentPts);
+  if (ptsRadio) ptsRadio.checked = true;
   openOverlay("editChoreOverlay");
 }
 
@@ -1497,10 +1621,13 @@ async function saveEditChore() {
   const aDateVal  = document.getElementById("editAnchorDate").value;  // "YYYY-MM-DD" or ""
   const aWdayS    = document.getElementById("editAnchorWeekday").value;
   const aWday     = aWdayS !== "" ? parseInt(aWdayS) : null;
+  const ptsEl     = document.querySelector('input[name="editPoints"]:checked');
+  const pts       = ptsEl ? parseInt(ptsEl.value) : 1;
   if (!name) { showToast("Please enter a chore name"); return; }
   const usesDate  = freq === "biweekly" || freq === "monthly" || freq === "yearly";
   await dbSet(`chores/${id}/name`,         name);
   await dbSet(`chores/${id}/frequency`,    freq);
+  await dbSet(`chores/${id}/points`,       pts);
   await dbSet(`chores/${id}/anchorDate`,   usesDate              ? (aDateVal || null) : null);
   await dbSet(`chores/${id}/anchorWeekday`,(freq === "weekly")   ? aWday              : null);
   // Clear legacy fields so old data doesn't interfere
