@@ -126,27 +126,34 @@
       position: fixed;
       bottom: 0; left: 0; right: 0;
       display: flex;
-      background: rgba(255,255,255,.18);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border-top: 1px solid rgba(255,255,255,.25);
+      justify-content: center;
+      gap: 12px;
+      padding: 10px 24px 18px;
+      background: rgba(30, 20, 60, 0.72);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(255,255,255,.15);
       z-index: 300;
     }
     .nav-tab {
-      flex: 1;
       display: flex; flex-direction: column; align-items: center;
-      padding: 10px 0 12px;
-      border: none; background: none;
+      padding: 10px 28px 8px;
+      border: none;
+      background: rgba(255,255,255,.1);
+      border-radius: 16px;
       cursor: pointer;
-      color: rgba(255,255,255,.55);
-      font-size: .72rem; font-weight: 700;
-      letter-spacing: .02em;
-      transition: color .15s;
-      gap: 3px;
+      color: rgba(255,255,255,.6);
+      font-size: .74rem; font-weight: 700;
+      letter-spacing: .03em;
+      transition: background .15s, color .15s;
+      gap: 4px;
     }
-    .nav-tab .nav-icon { font-size: 1.35rem; line-height: 1; }
-    .nav-tab.active { color: #fff; }
-    .nav-tab.active .nav-icon { filter: drop-shadow(0 0 4px rgba(255,255,255,.5)); }
+    .nav-tab .nav-icon { font-size: 1.5rem; line-height: 1; }
+    .nav-tab.active {
+      background: rgba(255,255,255,.22);
+      color: #fff;
+    }
+    .nav-tab.active .nav-icon { filter: drop-shadow(0 0 6px rgba(255,255,255,.6)); }
 
     /* ============================================================
        MAIN
