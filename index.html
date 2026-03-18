@@ -718,6 +718,10 @@
           <option value="yearly">Yearly</option>
         </select>
       </div>
+      <div class="form-group" id="newAnchorWeekdayWrap" style="display:none">
+        <label>Which day of the week?</label>
+        <select id="newAnchorWeekday"></select>
+      </div>
       <div class="form-group" id="newAnchorMonthWrap" style="display:none">
         <label>In which month?</label>
         <select id="newAnchorMonth"></select>
@@ -820,6 +824,10 @@
         <option value="yearly">Yearly</option>
       </select>
     </div>
+    <div class="form-group" id="editAnchorWeekdayWrap" style="display:none">
+      <label>Which day of the week?</label>
+      <select id="editAnchorWeekday"></select>
+    </div>
     <div class="form-group" id="editAnchorMonthWrap" style="display:none">
       <label>In which month?</label>
       <select id="editAnchorMonth"></select>
@@ -885,8 +893,9 @@ const KID_AVATARS = ["🐱","🐶","🐸","🦊","🐼","🐨","🦁","🐯","�
 const ORDINALS = ["","1st","2nd","3rd","4th","5th","6th","7th","8th","9th","10th",
   "11th","12th","13th","14th","15th","16th","17th","18th","19th","20th",
   "21st","22nd","23rd","24th","25th","26th","27th","28th","29th","30th","31st"];
-const MONTH_NAMES = ["January","February","March","April","May","June",
+const MONTH_NAMES   = ["January","February","March","April","May","June",
   "July","August","September","October","November","December"];
+const WEEKDAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
 const SAMPLE_CHORES = [
   { name: "Wash the dishes",         frequency: "daily"    },
@@ -1063,6 +1072,20 @@ function getRoot(key) {
    ANCHOR DATE HELPERS
 ============================================================ */
 function getAnchorOccurrences(chore) {
+  const now = Date.now();
+  const d   = new Date();
+
+  // Weekly / Bi-Weekly with a specific weekday
+  if ((chore.frequency === "weekly" || chore.frequency === "biweekly") &&
+      chore.anchorWeekday != null && chore.anchorWeekday !== "") {
+    const weekday  = parseInt(chore.anchorWeekday);
+    const freqMs   = FREQ_MS[chore.frequency];
+    const daysBack = (d.getDay() - weekday + 7) % 7;
+    const lastDue  = new Date(d.getFullYear(), d.getMonth(), d.getDate() - daysBack, 0,0,0,0).getTime();
+    const nextDue  = lastDue + freqMs;
+    return { lastDue, nextDue, freqMs };
+  }
+
   if (!chore.anchorDay || (chore.frequency !== "monthly" && chore.frequency !== "yearly")) return null;
   const now  = Date.now();
   const day  = parseInt(chore.anchorDay);
@@ -1371,22 +1394,27 @@ function renderAdminChoreList() {
         <div class="li-sub">${FREQ_LABELS[chore.frequency] || chore.frequency}</div>
       </div>
       <div class="li-actions">
-        <button class="icon-btn" onclick="openEditChore('${escAttr(id)}','${escAttr(chore.name)}','${chore.frequency}',${chore.anchorDay||0},${chore.anchorMonth||0})">✏️</button>
+        <button class="icon-btn" onclick="openEditChore('${escAttr(id)}')">✏️</button>
       </div>
     </div>`).join("");
 }
 
 async function addChore() {
-  const name  = document.getElementById("newChoreName").value.trim();
-  const freq  = document.getElementById("newChoreFreq").value;
-  const aDay  = parseInt(document.getElementById("newAnchorDay").value)  || null;
-  const aMon  = parseInt(document.getElementById("newAnchorMonth").value) || null;
+  const name    = document.getElementById("newChoreName").value.trim();
+  const freq    = document.getElementById("newChoreFreq").value;
+  const aDay    = parseInt(document.getElementById("newAnchorDay").value)      || null;
+  const aMon    = parseInt(document.getElementById("newAnchorMonth").value)    || null;
+  const aWdayS  = document.getElementById("newAnchorWeekday").value;
+  const aWday   = aWdayS !== "" ? parseInt(aWdayS) : null;
   if (!name) { showToast("Please enter a chore name"); return; }
   const chore = { name, frequency: freq, lastCompleted: null, lastCompletedBy: null,
-                  anchorDay: aDay, anchorMonth: (freq === "yearly" ? aMon : null) };
+                  anchorDay:     (freq === "monthly" || freq === "yearly")    ? aDay  : null,
+                  anchorMonth:   (freq === "yearly")                          ? aMon  : null,
+                  anchorWeekday: (freq === "weekly"  || freq === "biweekly")  ? aWday : null };
   await dbPush("chores", chore);
   document.getElementById("newChoreName").value = "";
   document.getElementById("newAnchorDay").value = "";
+  document.getElementById("newAnchorWeekday").value = "";
   showToast("Chore added ✅");
   renderAdminChoreList();
 }
@@ -1407,29 +1435,35 @@ async function loadSampleChores() {
 }
 
 /* ── Edit Chore Modal ──────────────────────────────────────── */
-function openEditChore(id, name, freq, anchorDay, anchorMonth) {
+function openEditChore(id) {
+  const chore = choresData[id] || {};
   document.getElementById("editChoreId").value   = id;
-  document.getElementById("editChoreName").value = name;
-  document.getElementById("editChoreFreq").value  = freq;
+  document.getElementById("editChoreName").value = chore.name || "";
+  document.getElementById("editChoreFreq").value  = chore.frequency || "weekly";
   document.getElementById("editChoreReset").value = "no";
   toggleAnchor("edit");
-  if (anchorDay)   document.getElementById("editAnchorDay").value   = anchorDay;
-  if (anchorMonth) document.getElementById("editAnchorMonth").value = anchorMonth;
+  if (chore.anchorWeekday != null && chore.anchorWeekday !== "")
+    document.getElementById("editAnchorWeekday").value = chore.anchorWeekday;
+  if (chore.anchorDay)   document.getElementById("editAnchorDay").value   = chore.anchorDay;
+  if (chore.anchorMonth) document.getElementById("editAnchorMonth").value = chore.anchorMonth;
   openOverlay("editChoreOverlay");
 }
 
 async function saveEditChore() {
-  const id    = document.getElementById("editChoreId").value;
-  const name  = document.getElementById("editChoreName").value.trim();
-  const freq  = document.getElementById("editChoreFreq").value;
-  const reset = document.getElementById("editChoreReset").value;
-  const aDay  = parseInt(document.getElementById("editAnchorDay").value)   || null;
-  const aMon  = parseInt(document.getElementById("editAnchorMonth").value)  || null;
+  const id      = document.getElementById("editChoreId").value;
+  const name    = document.getElementById("editChoreName").value.trim();
+  const freq    = document.getElementById("editChoreFreq").value;
+  const reset   = document.getElementById("editChoreReset").value;
+  const aDay    = parseInt(document.getElementById("editAnchorDay").value)     || null;
+  const aMon    = parseInt(document.getElementById("editAnchorMonth").value)   || null;
+  const aWdayS  = document.getElementById("editAnchorWeekday").value;
+  const aWday   = aWdayS !== "" ? parseInt(aWdayS) : null;
   if (!name) { showToast("Please enter a chore name"); return; }
-  await dbSet(`chores/${id}/name`,        name);
-  await dbSet(`chores/${id}/frequency`,   freq);
-  await dbSet(`chores/${id}/anchorDay`,   aDay);
-  await dbSet(`chores/${id}/anchorMonth`, (freq === "yearly" ? aMon : null));
+  await dbSet(`chores/${id}/name`,         name);
+  await dbSet(`chores/${id}/frequency`,    freq);
+  await dbSet(`chores/${id}/anchorDay`,    (freq === "monthly" || freq === "yearly")   ? aDay  : null);
+  await dbSet(`chores/${id}/anchorMonth`,  (freq === "yearly")                         ? aMon  : null);
+  await dbSet(`chores/${id}/anchorWeekday`,(freq === "weekly"  || freq === "biweekly") ? aWday : null);
   if (reset === "yes") {
     await dbSet(`chores/${id}/lastCompleted`,   null);
     await dbSet(`chores/${id}/lastCompletedBy`, null);
@@ -1514,10 +1548,13 @@ async function changePassword() {
 function populateAnchorSelects() {
   const dayOpts  = '<option value="">— Any day —</option>' +
     ORDINALS.slice(1).map((o,i) => `<option value="${i+1}">${o}</option>`).join("");
-  const monOpts  = MONTH_NAMES.map((m,i) => `<option value="${i+1}">${m}</option>`).join("");
+  const monOpts  = MONTH_NAMES.map((m,i)   => `<option value="${i+1}">${m}</option>`).join("");
+  const wdayOpts = '<option value="">— Any day —</option>' +
+    WEEKDAY_NAMES.map((d,i) => `<option value="${i}">${d}</option>`).join("");
   ["new","edit"].forEach(p => {
-    document.getElementById(p + "AnchorDay").innerHTML   = dayOpts;
-    document.getElementById(p + "AnchorMonth").innerHTML = monOpts;
+    document.getElementById(p + "AnchorDay").innerHTML     = dayOpts;
+    document.getElementById(p + "AnchorMonth").innerHTML   = monOpts;
+    document.getElementById(p + "AnchorWeekday").innerHTML = wdayOpts;
   });
 }
 
@@ -1525,15 +1562,19 @@ function toggleAnchor(prefix) {
   const freq     = document.getElementById(prefix + "ChoreFreq").value;
   const dayWrap  = document.getElementById(prefix + "AnchorDayWrap");
   const monWrap  = document.getElementById(prefix + "AnchorMonthWrap");
+  const wdayWrap = document.getElementById(prefix + "AnchorWeekdayWrap");
   const dayLabel = document.getElementById(prefix + "AnchorDayLabel");
-  const show     = freq === "monthly" || freq === "yearly";
-  dayWrap.style.display = show ? "block" : "none";
-  monWrap.style.display = freq === "yearly" ? "block" : "none";
+  const showDate = freq === "monthly" || freq === "yearly";
+  const showWday = freq === "weekly"  || freq === "biweekly";
+  dayWrap.style.display  = showDate ? "block" : "none";
+  monWrap.style.display  = freq === "yearly" ? "block" : "none";
+  wdayWrap.style.display = showWday ? "block" : "none";
   if (dayLabel) dayLabel.textContent = freq === "yearly" ? "On which day?" : "Due on the…";
-  if (!show) {
+  if (!showDate) {
     document.getElementById(prefix + "AnchorDay").value   = "";
     document.getElementById(prefix + "AnchorMonth").value = "1";
   }
+  if (!showWday) document.getElementById(prefix + "AnchorWeekday").value = "";
 }
 
 
