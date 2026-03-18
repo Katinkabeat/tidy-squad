@@ -57,36 +57,43 @@
     .header {
       background: rgba(255,255,255,.15);
       backdrop-filter: blur(12px);
-      padding: 18px 20px 16px;
+      padding: 10px 14px;
       position: sticky; top: 0; z-index: 200;
+      display: flex; align-items: center;
+    }
+    .header-center {
+      flex: 1;
       text-align: center;
     }
     .header h1 {
       color: #fff;
-      font-size: 1.7rem;
+      font-size: 1.4rem;
       font-weight: 900;
-      letter-spacing: -.5px;
+      letter-spacing: -.3px;
       text-shadow: 0 2px 8px rgba(0,0,0,.25);
+      line-height: 1.2;
     }
     .header-date {
       color: rgba(255,255,255,.75);
-      font-size: .82rem;
-      margin-top: 3px;
+      font-size: .75rem;
+      margin-top: 2px;
     }
     .admin-btn {
-      position: absolute;
-      right: 14px; top: 16px;
+      flex-shrink: 0;
       background: rgba(255,255,255,.2);
       border: 1.5px solid rgba(255,255,255,.45);
       color: #fff;
-      padding: 7px 14px;
+      padding: 7px 12px;
       border-radius: 20px;
       cursor: pointer;
-      font-size: .82rem;
+      font-size: .78rem;
       font-weight: 700;
       transition: background .15s;
+      white-space: nowrap;
     }
     .admin-btn:hover { background: rgba(255,255,255,.35); }
+    /* invisible spacer to keep title centred */
+    .header-spacer { flex-shrink: 0; visibility: hidden; padding: 7px 12px; font-size: .78rem; }
 
     /* ============================================================
        SETUP BANNER
@@ -191,14 +198,18 @@
     .chore-card.soon    { border-left-color: var(--amber); }
     .chore-card.done    { border-left-color: var(--green); opacity: .88; }
 
+    .chore-title-row {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 8px;
+    }
     .chore-name {
       font-size: 1rem;
       font-weight: 700;
       color: var(--text);
+      flex: 1;
     }
     .chore-meta {
       display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
-      margin-top: 6px;
+      margin-top: 5px;
     }
     .freq-tag {
       background: var(--gray-lt);
@@ -239,11 +250,11 @@
 
     /* ── Points badge on chore cards ── */
     .points-badge {
-      display: inline-flex; align-items: center; gap: 2px;
+      display: inline-flex; align-items: center;
       background: #FEF9C3; color: #854d0e;
-      border-radius: 10px; padding: 2px 7px;
-      font-size: .72rem; font-weight: 800;
-      vertical-align: middle;
+      border-radius: 10px; padding: 3px 8px;
+      font-size: .75rem; font-weight: 800;
+      white-space: nowrap; flex-shrink: 0;
     }
 
     /* ── Stats page ── */
@@ -669,8 +680,11 @@
      HEADER
 ============================================================ -->
 <header class="header">
-  <h1>🧹 <span id="familyNameDisplay">Tidy Squad</span></h1>
-  <div class="header-date" id="dateDisplay"></div>
+  <span class="header-spacer">🔒 Admin</span>
+  <div class="header-center">
+    <h1>🧹 <span id="familyNameDisplay">Tidy Squad</span></h1>
+    <div class="header-date" id="dateDisplay"></div>
+  </div>
   <button class="admin-btn" onclick="openAdminLogin()">🔒 Admin</button>
 </header>
 
@@ -1470,14 +1484,15 @@ function renderSection(type, items) {
     const dueTxt   = nextDueDateText(chore);
     const dueCls   = type === "overdue" ? "overdue" : type === "soon" ? "soon" : "";
 
-    const pts     = parseInt(chore.points) || 1;
-    const ptsStars = "⭐".repeat(pts);
+    const pts = parseInt(chore.points) || 1;
     return `<div class="chore-card ${type}" data-id="${chore.id}">
-      <div class="chore-name">${escHtml(chore.name)}</div>
+      <div class="chore-title-row">
+        <div class="chore-name">${escHtml(chore.name)}</div>
+        <span class="points-badge">⭐ ${pts} pt${pts !== 1 ? "s" : ""}</span>
+      </div>
       <div class="chore-meta">
         <span class="freq-tag">${freq}</span>
         <span class="time-text">${tText}</span>
-        <span class="points-badge">${ptsStars} ${pts} pt${pts !== 1 ? "s" : ""}</span>
       </div>
       ${doneByHtml}
       <div class="progress-wrap">
@@ -1603,7 +1618,7 @@ function renderAdminChoreList() {
     <div class="list-item">
       <div class="li-left">
         <div class="li-name">${escHtml(chore.name)}</div>
-        <div class="li-sub">${FREQ_LABELS[chore.frequency] || chore.frequency} &nbsp;·&nbsp; ${"⭐".repeat(pts)} ${pts} pt${pts !== 1 ? "s" : ""}</div>
+        <div class="li-sub">${FREQ_LABELS[chore.frequency] || chore.frequency} &nbsp;·&nbsp; ⭐ ${pts} pt${pts !== 1 ? "s" : ""}</div>
       </div>
       <div class="li-actions">
         <button class="icon-btn" onclick="openEditChore('${escAttr(id)}')">✏️</button>
