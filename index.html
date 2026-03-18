@@ -343,6 +343,7 @@
     }
     input[type="text"],
     input[type="password"],
+    input[type="date"],
     select {
       width: 100%;
       padding: 11px 14px;
@@ -722,13 +723,9 @@
         <label>Which day of the week?</label>
         <select id="newAnchorWeekday"></select>
       </div>
-      <div class="form-group" id="newAnchorMonthWrap" style="display:none">
-        <label>In which month?</label>
-        <select id="newAnchorMonth"></select>
-      </div>
-      <div class="form-group" id="newAnchorDayWrap" style="display:none">
-        <label id="newAnchorDayLabel">Due on the…</label>
-        <select id="newAnchorDay"></select>
+      <div class="form-group" id="newAnchorDateWrap" style="display:none">
+        <label>First due date</label>
+        <input type="date" id="newAnchorDate" />
       </div>
       <button class="btn btn-primary btn-full" onclick="addChore()">Add Chore</button>
       <hr>
@@ -828,13 +825,9 @@
       <label>Which day of the week?</label>
       <select id="editAnchorWeekday"></select>
     </div>
-    <div class="form-group" id="editAnchorMonthWrap" style="display:none">
-      <label>In which month?</label>
-      <select id="editAnchorMonth"></select>
-    </div>
-    <div class="form-group" id="editAnchorDayWrap" style="display:none">
-      <label id="editAnchorDayLabel">Due on the…</label>
-      <select id="editAnchorDay"></select>
+    <div class="form-group" id="editAnchorDateWrap" style="display:none">
+      <label>First due date</label>
+      <input type="date" id="editAnchorDate" />
     </div>
     <div class="form-group">
       <label>Reset completion (uncheck to keep history)</label>
@@ -1081,49 +1074,82 @@ function getRoot(key) {
    ANCHOR DATE HELPERS
 ============================================================ */
 function getAnchorOccurrences(chore) {
-  const now = Date.now();
-  const d   = new Date();
+  const now  = Date.now();
+  const d    = new Date();
+  const freq = chore.frequency;
 
-  // Weekly / Bi-Weekly with a specific weekday
-  if ((chore.frequency === "weekly" || chore.frequency === "biweekly") &&
-      chore.anchorWeekday != null && chore.anchorWeekday !== "") {
+  // ── Weekly: weekday anchor ──────────────────────────────────
+  if (freq === "weekly" && chore.anchorWeekday != null && chore.anchorWeekday !== "") {
     const weekday  = parseInt(chore.anchorWeekday);
-    const freqMs   = FREQ_MS[chore.frequency];
+    const freqMs   = FREQ_MS.weekly;
     const daysBack = (d.getDay() - weekday + 7) % 7;
     const lastDue  = new Date(d.getFullYear(), d.getMonth(), d.getDate() - daysBack, 0,0,0,0).getTime();
     const nextDue  = lastDue + freqMs;
     return { lastDue, nextDue, freqMs };
   }
 
-  if (!chore.anchorDay || (chore.frequency !== "monthly" && chore.frequency !== "yearly")) return null;
-  const day  = parseInt(chore.anchorDay);
-
-  if (chore.frequency === "monthly") {
-    let candidate = new Date(d.getFullYear(), d.getMonth(), day, 0, 0, 0, 0).getTime();
-    let lastDue, nextDue;
-    if (candidate <= now) {
-      lastDue = candidate;
-      nextDue = new Date(d.getFullYear(), d.getMonth() + 1, day, 0, 0, 0, 0).getTime();
+  // ── Biweekly / Monthly / Yearly: calendar date anchor ───────
+  if (freq === "biweekly" || freq === "monthly" || freq === "yearly") {
+    // Prefer new anchorDate field (ISO "YYYY-MM-DD"); fall back to legacy anchorDay/anchorMonth
+    let anchorDay, anchorMonth0; // anchorMonth0 = 0-based month index
+    if (chore.anchorDate) {
+      const parts = chore.anchorDate.split("-");
+      anchorMonth0 = parseInt(parts[1]) - 1;
+      anchorDay    = parseInt(parts[2]);
+    } else if (chore.anchorDay) {
+      // Legacy fields
+      anchorDay    = parseInt(chore.anchorDay);
+      anchorMonth0 = chore.anchorMonth ? parseInt(chore.anchorMonth) - 1 : 0;
     } else {
-      lastDue = new Date(d.getFullYear(), d.getMonth() - 1, day, 0, 0, 0, 0).getTime();
-      nextDue = candidate;
+      return null; // no anchor set
     }
-    return { lastDue, nextDue, freqMs: FREQ_MS.monthly };
+
+    if (freq === "biweekly") {
+      // Treat anchorDate as a known past/future due date; find last/next from it
+      const freqMs     = FREQ_MS.biweekly;
+      const anchor     = new Date(
+        chore.anchorDate
+          ? parseInt(chore.anchorDate.split("-")[0])
+          : d.getFullYear(),
+        anchorMonth0, anchorDay, 0,0,0,0
+      ).getTime();
+      // Walk backwards/forwards from anchor to find lastDue <= now and nextDue > now
+      let lastDue = anchor;
+      if (lastDue > now) {
+        while (lastDue > now) lastDue -= freqMs;
+      } else {
+        while (lastDue + freqMs <= now) lastDue += freqMs;
+      }
+      return { lastDue, nextDue: lastDue + freqMs, freqMs };
+    }
+
+    if (freq === "monthly") {
+      let candidate = new Date(d.getFullYear(), d.getMonth(), anchorDay, 0,0,0,0).getTime();
+      let lastDue, nextDue;
+      if (candidate <= now) {
+        lastDue = candidate;
+        nextDue = new Date(d.getFullYear(), d.getMonth() + 1, anchorDay, 0,0,0,0).getTime();
+      } else {
+        lastDue = new Date(d.getFullYear(), d.getMonth() - 1, anchorDay, 0,0,0,0).getTime();
+        nextDue = candidate;
+      }
+      return { lastDue, nextDue, freqMs: FREQ_MS.monthly };
+    }
+
+    if (freq === "yearly") {
+      let candidate = new Date(d.getFullYear(), anchorMonth0, anchorDay, 0,0,0,0).getTime();
+      let lastDue, nextDue;
+      if (candidate <= now) {
+        lastDue = candidate;
+        nextDue = new Date(d.getFullYear() + 1, anchorMonth0, anchorDay, 0,0,0,0).getTime();
+      } else {
+        lastDue = new Date(d.getFullYear() - 1, anchorMonth0, anchorDay, 0,0,0,0).getTime();
+        nextDue = candidate;
+      }
+      return { lastDue, nextDue, freqMs: FREQ_MS.yearly };
+    }
   }
 
-  if (chore.frequency === "yearly") {
-    const month = parseInt(chore.anchorMonth || 1) - 1;
-    let candidate = new Date(d.getFullYear(), month, day, 0, 0, 0, 0).getTime();
-    let lastDue, nextDue;
-    if (candidate <= now) {
-      lastDue = candidate;
-      nextDue = new Date(d.getFullYear() + 1, month, day, 0, 0, 0, 0).getTime();
-    } else {
-      lastDue = new Date(d.getFullYear() - 1, month, day, 0, 0, 0, 0).getTime();
-      nextDue = candidate;
-    }
-    return { lastDue, nextDue, freqMs: FREQ_MS.yearly };
-  }
   return null;
 }
 
@@ -1407,20 +1433,19 @@ function renderAdminChoreList() {
 }
 
 async function addChore() {
-  const name    = document.getElementById("newChoreName").value.trim();
-  const freq    = document.getElementById("newChoreFreq").value;
-  const aDay    = parseInt(document.getElementById("newAnchorDay").value)      || null;
-  const aMon    = parseInt(document.getElementById("newAnchorMonth").value)    || null;
-  const aWdayS  = document.getElementById("newAnchorWeekday").value;
-  const aWday   = aWdayS !== "" ? parseInt(aWdayS) : null;
+  const name      = document.getElementById("newChoreName").value.trim();
+  const freq      = document.getElementById("newChoreFreq").value;
+  const aDateVal  = document.getElementById("newAnchorDate").value;   // "YYYY-MM-DD" or ""
+  const aWdayS    = document.getElementById("newAnchorWeekday").value;
+  const aWday     = aWdayS !== "" ? parseInt(aWdayS) : null;
   if (!name) { showToast("Please enter a chore name"); return; }
+  const usesDate  = freq === "biweekly" || freq === "monthly" || freq === "yearly";
   const chore = { name, frequency: freq, lastCompleted: null, lastCompletedBy: null,
-                  anchorDay:     (freq === "monthly" || freq === "yearly")    ? aDay  : null,
-                  anchorMonth:   (freq === "yearly")                          ? aMon  : null,
-                  anchorWeekday: (freq === "weekly"  || freq === "biweekly")  ? aWday : null };
+                  anchorDate:    usesDate                               ? (aDateVal || null) : null,
+                  anchorWeekday: (freq === "weekly")                    ? aWday              : null };
   await dbPush("chores", chore);
-  document.getElementById("newChoreName").value = "";
-  document.getElementById("newAnchorDay").value = "";
+  document.getElementById("newChoreName").value  = "";
+  document.getElementById("newAnchorDate").value = "";
   document.getElementById("newAnchorWeekday").value = "";
   showToast("Chore added ✅");
   renderAdminChoreList();
@@ -1444,33 +1469,43 @@ async function loadSampleChores() {
 /* ── Edit Chore Modal ──────────────────────────────────────── */
 function openEditChore(id) {
   const chore = choresData[id] || {};
-  document.getElementById("editChoreId").value   = id;
-  document.getElementById("editChoreName").value = chore.name || "";
+  document.getElementById("editChoreId").value    = id;
+  document.getElementById("editChoreName").value  = chore.name || "";
   document.getElementById("editChoreFreq").value  = chore.frequency || "weekly";
   document.getElementById("editChoreReset").value = "no";
   toggleAnchor("edit");
   if (chore.anchorWeekday != null && chore.anchorWeekday !== "")
     document.getElementById("editAnchorWeekday").value = chore.anchorWeekday;
-  if (chore.anchorDay)   document.getElementById("editAnchorDay").value   = chore.anchorDay;
-  if (chore.anchorMonth) document.getElementById("editAnchorMonth").value = chore.anchorMonth;
+  // Populate date picker — prefer anchorDate; fall back to legacy anchorDay/anchorMonth
+  if (chore.anchorDate) {
+    document.getElementById("editAnchorDate").value = chore.anchorDate;
+  } else if (chore.anchorDay) {
+    // Reconstruct a best-guess ISO date from legacy fields so existing chores still show a value
+    const yr  = new Date().getFullYear();
+    const mon = chore.anchorMonth ? String(chore.anchorMonth).padStart(2,"0") : "01";
+    const day = String(chore.anchorDay).padStart(2,"0");
+    document.getElementById("editAnchorDate").value = `${yr}-${mon}-${day}`;
+  }
   openOverlay("editChoreOverlay");
 }
 
 async function saveEditChore() {
-  const id      = document.getElementById("editChoreId").value;
-  const name    = document.getElementById("editChoreName").value.trim();
-  const freq    = document.getElementById("editChoreFreq").value;
-  const reset   = document.getElementById("editChoreReset").value;
-  const aDay    = parseInt(document.getElementById("editAnchorDay").value)     || null;
-  const aMon    = parseInt(document.getElementById("editAnchorMonth").value)   || null;
-  const aWdayS  = document.getElementById("editAnchorWeekday").value;
-  const aWday   = aWdayS !== "" ? parseInt(aWdayS) : null;
+  const id        = document.getElementById("editChoreId").value;
+  const name      = document.getElementById("editChoreName").value.trim();
+  const freq      = document.getElementById("editChoreFreq").value;
+  const reset     = document.getElementById("editChoreReset").value;
+  const aDateVal  = document.getElementById("editAnchorDate").value;  // "YYYY-MM-DD" or ""
+  const aWdayS    = document.getElementById("editAnchorWeekday").value;
+  const aWday     = aWdayS !== "" ? parseInt(aWdayS) : null;
   if (!name) { showToast("Please enter a chore name"); return; }
+  const usesDate  = freq === "biweekly" || freq === "monthly" || freq === "yearly";
   await dbSet(`chores/${id}/name`,         name);
   await dbSet(`chores/${id}/frequency`,    freq);
-  await dbSet(`chores/${id}/anchorDay`,    (freq === "monthly" || freq === "yearly")   ? aDay  : null);
-  await dbSet(`chores/${id}/anchorMonth`,  (freq === "yearly")                         ? aMon  : null);
-  await dbSet(`chores/${id}/anchorWeekday`,(freq === "weekly"  || freq === "biweekly") ? aWday : null);
+  await dbSet(`chores/${id}/anchorDate`,   usesDate              ? (aDateVal || null) : null);
+  await dbSet(`chores/${id}/anchorWeekday`,(freq === "weekly")   ? aWday              : null);
+  // Clear legacy fields so old data doesn't interfere
+  await dbSet(`chores/${id}/anchorDay`,   null);
+  await dbSet(`chores/${id}/anchorMonth`, null);
   if (reset === "yes") {
     await dbSet(`chores/${id}/lastCompleted`,   null);
     await dbSet(`chores/${id}/lastCompletedBy`, null);
@@ -1553,34 +1588,22 @@ async function changePassword() {
    ANCHOR DATE UI
 ============================================================ */
 function populateAnchorSelects() {
-  const dayOpts  = '<option value="">— Any day —</option>' +
-    ORDINALS.slice(1).map((o,i) => `<option value="${i+1}">${o}</option>`).join("");
-  const monOpts  = MONTH_NAMES.map((m,i)   => `<option value="${i+1}">${m}</option>`).join("");
   const wdayOpts = '<option value="">— Any day —</option>' +
     WEEKDAY_NAMES.map((d,i) => `<option value="${i}">${d}</option>`).join("");
   ["new","edit"].forEach(p => {
-    document.getElementById(p + "AnchorDay").innerHTML     = dayOpts;
-    document.getElementById(p + "AnchorMonth").innerHTML   = monOpts;
     document.getElementById(p + "AnchorWeekday").innerHTML = wdayOpts;
   });
 }
 
 function toggleAnchor(prefix) {
-  const freq     = document.getElementById(prefix + "ChoreFreq").value;
-  const dayWrap  = document.getElementById(prefix + "AnchorDayWrap");
-  const monWrap  = document.getElementById(prefix + "AnchorMonthWrap");
-  const wdayWrap = document.getElementById(prefix + "AnchorWeekdayWrap");
-  const dayLabel = document.getElementById(prefix + "AnchorDayLabel");
-  const showDate = freq === "monthly" || freq === "yearly";
-  const showWday = freq === "weekly"  || freq === "biweekly";
-  dayWrap.style.display  = showDate ? "block" : "none";
-  monWrap.style.display  = freq === "yearly" ? "block" : "none";
-  wdayWrap.style.display = showWday ? "block" : "none";
-  if (dayLabel) dayLabel.textContent = freq === "yearly" ? "On which day?" : "Due on the…";
-  if (!showDate) {
-    document.getElementById(prefix + "AnchorDay").value   = "";
-    document.getElementById(prefix + "AnchorMonth").value = "1";
-  }
+  const freq      = document.getElementById(prefix + "ChoreFreq").value;
+  const dateWrap  = document.getElementById(prefix + "AnchorDateWrap");
+  const wdayWrap  = document.getElementById(prefix + "AnchorWeekdayWrap");
+  const showDate  = freq === "biweekly" || freq === "monthly" || freq === "yearly";
+  const showWday  = freq === "weekly";
+  dateWrap.style.display  = showDate ? "block" : "none";
+  wdayWrap.style.display  = showWday ? "block" : "none";
+  if (!showDate) document.getElementById(prefix + "AnchorDate").value = "";
   if (!showWday) document.getElementById(prefix + "AnchorWeekday").value = "";
 }
 
