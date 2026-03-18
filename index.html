@@ -166,26 +166,37 @@
     }
 
     /* ============================================================
-       SECTION HEADINGS
+       CHORE TABS
     ============================================================ */
-    .section { margin-bottom: 20px; }
-    .section-head {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 10px;
+    .chore-tabs {
+      display: flex; gap: 8px;
+      margin-bottom: 14px;
     }
-    .section-title {
-      color: #fff;
-      font-size: 1.05rem;
-      font-weight: 800;
-      text-shadow: 0 1px 4px rgba(0,0,0,.2);
+    .chore-tab {
+      flex: 1; border: none;
+      background: rgba(255,255,255,.15);
+      color: rgba(255,255,255,.65);
+      font-size: .78rem; font-weight: 700;
+      padding: 10px 4px 9px;
+      border-radius: 12px;
+      cursor: pointer; transition: all .15s;
+      text-align: center; line-height: 1.3;
     }
-    .section-badge {
+    .chore-tab.active {
+      background: rgba(255,255,255,.95);
+      color: var(--purple);
+    }
+    .ctab-cnt {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: var(--purple); color: #fff;
+      font-size: .65rem; font-weight: 800;
+      min-width: 18px; height: 18px;
+      border-radius: 9px; padding: 0 4px;
+      margin-left: 5px; vertical-align: middle;
+    }
+    .chore-tab:not(.active) .ctab-cnt {
       background: rgba(255,255,255,.3);
-      color: #fff;
-      font-size: .75rem;
-      font-weight: 800;
-      padding: 2px 10px;
-      border-radius: 20px;
+      color: rgba(255,255,255,.9);
     }
 
     /* ============================================================
@@ -737,32 +748,15 @@
 ============================================================ -->
 <div class="main" id="mainContent" style="display:none">
 
-  <!-- OVERDUE -->
-  <div class="section" id="sec-overdue">
-    <div class="section-head">
-      <div class="section-title">🔴 Needs to be Done NOW</div>
-      <div class="section-badge" id="cnt-overdue">0</div>
-    </div>
-    <div id="list-overdue"></div>
+  <!-- CHORE TABS -->
+  <div class="chore-tabs">
+    <button class="chore-tab active" id="ctab-week"     onclick="switchChoreTab('week')">🔥 This Week<span class="ctab-cnt" id="ctab-week-cnt"></span></button>
+    <button class="chore-tab"        id="ctab-twoweeks" onclick="switchChoreTab('twoweeks')">📅 2 Weeks<span class="ctab-cnt" id="ctab-twoweeks-cnt"></span></button>
+    <button class="chore-tab"        id="ctab-later"    onclick="switchChoreTab('later')">📋 Later<span class="ctab-cnt" id="ctab-later-cnt"></span></button>
   </div>
-
-  <!-- SOON -->
-  <div class="section" id="sec-soon">
-    <div class="section-head">
-      <div class="section-title">🟡 Coming Up Soon</div>
-      <div class="section-badge" id="cnt-soon">0</div>
-    </div>
-    <div id="list-soon"></div>
-  </div>
-
-  <!-- DONE -->
-  <div class="section" id="sec-done">
-    <div class="section-head">
-      <div class="section-title">✅ All Done!</div>
-      <div class="section-badge" id="cnt-done">0</div>
-    </div>
-    <div id="list-done"></div>
-  </div>
+  <div id="chorelist-week"></div>
+  <div id="chorelist-twoweeks" style="display:none"></div>
+  <div id="chorelist-later"    style="display:none"></div>
 
 </div>
 
@@ -1084,6 +1078,7 @@ const PIN_SESSION_KEY = "ts_unlocked";
 let pinBuffer        = "";
 let firebaseTimeout  = null;
 let currentStatsTab  = "week";   // "week" | "lastweek" | "alltime"
+let currentChoreTab  = "week";   // "week" | "twoweeks" | "later"
 
 
 /* ============================================================
@@ -1483,49 +1478,79 @@ function renderLeaderboard() {
 
 
 /* ============================================================
+   CHORE TAB HELPERS
+============================================================ */
+function daysUntilDue(chore) {
+  const DAY = 24 * 60 * 60 * 1000;
+  const now  = Date.now();
+  const anchor = getAnchorOccurrences(chore);
+  let nextDueTs;
+  if (anchor) {
+    const { lastDue, nextDue } = anchor;
+    // If done this cycle, count down to next occurrence; otherwise count to lastDue
+    nextDueTs = (chore.lastCompleted && chore.lastCompleted >= lastDue) ? nextDue : lastDue;
+  } else {
+    const freqMs = FREQ_MS[chore.frequency] || FREQ_MS.weekly;
+    nextDueTs = chore.lastCompleted ? chore.lastCompleted + freqMs : now - 1;
+  }
+  return Math.ceil((nextDueTs - now) / DAY);
+}
+
+function switchChoreTab(tab) {
+  currentChoreTab = tab;
+  ["week","twoweeks","later"].forEach(t => {
+    document.getElementById("ctab-" + t).classList.toggle("active", t === tab);
+    document.getElementById("chorelist-" + t).style.display = t === tab ? "block" : "none";
+  });
+}
+
+
+/* ============================================================
    RENDER ALL
 ============================================================ */
 function renderAll() {
-  const overdue = [], soon = [], done = [];
+  const buckets = { week: [], twoweeks: [], later: [] };
 
   Object.entries(choresData).forEach(([id, chore]) => {
     const status = choreStatus(chore);
-    const item   = { id, ...chore };
-    if (status === "overdue") overdue.push(item);
-    else if (status === "soon") soon.push(item);
-    else done.push(item);
+    const days   = daysUntilDue(chore);
+    const item   = { id, ...chore, _status: status, _days: days };
+    if      (days <= 7)  buckets.week.push(item);
+    else if (days <= 14) buckets.twoweeks.push(item);
+    else                 buckets.later.push(item);
   });
 
-  // Sort done by most recently completed
-  done.sort((a, b) => (b.lastCompleted || 0) - (a.lastCompleted || 0));
+  // Sort most urgent first within each tab
+  Object.values(buckets).forEach(arr => arr.sort((a, b) => a._days - b._days));
 
-  renderSection("overdue", overdue);
-  renderSection("soon",    soon);
-  renderSection("done",    done);
-  // If Stats tab is currently visible, keep it up to date too
+  // Update badge counts
+  document.getElementById("ctab-week-cnt").textContent     = buckets.week.length     || "";
+  document.getElementById("ctab-twoweeks-cnt").textContent = buckets.twoweeks.length || "";
+  document.getElementById("ctab-later-cnt").textContent    = buckets.later.length    || "";
+
+  renderChoreList("week",     buckets.week);
+  renderChoreList("twoweeks", buckets.twoweeks);
+  renderChoreList("later",    buckets.later);
+
   if (document.getElementById("statsContent").style.display !== "none") renderLeaderboard();
-
-  // Refresh admin list if panel is open
-  if (document.getElementById("adminPanelOverlay").classList.contains("open")) {
-    renderAdminChoreList();
-  }
+  if (document.getElementById("adminPanelOverlay").classList.contains("open")) renderAdminChoreList();
 }
 
-function renderSection(type, items) {
-  document.getElementById("cnt-" + type).textContent = items.length;
-  const container = document.getElementById("list-" + type);
+function renderChoreList(tabId, items) {
+  const container = document.getElementById("chorelist-" + tabId);
+  const msgs = {
+    week:     "✅ Nothing due this week — enjoy the break!",
+    twoweeks: "👍 Nothing coming up in the next two weeks",
+    later:    "📋 No chores scheduled beyond two weeks"
+  };
 
   if (!items.length) {
-    const msgs = {
-      overdue: "🎉 Nothing overdue right now!",
-      soon:    "👍 No chores coming up soon",
-      done:    "No completed chores yet"
-    };
-    container.innerHTML = `<div class="empty-state">${msgs[type]}</div>`;
+    container.innerHTML = `<div class="empty-state">${msgs[tabId]}</div>`;
     return;
   }
 
   container.innerHTML = items.map(chore => {
+    const type    = chore._status;   // "overdue" | "soon" | "done"
     const freq    = FREQ_LABELS[chore.frequency] || chore.frequency;
     const tText   = timeText(chore);
     const isDone  = type === "done";
@@ -1536,15 +1561,13 @@ function renderSection(type, items) {
     const doneByHtml = isDone && chore.lastCompletedBy
       ? `<div class="done-by">✓ Completed by ${escHtml(chore.lastCompletedBy)}</div>`
       : "";
-
-    // Progress bar
     const pct      = choreProgress(chore);
     const barColor = pct >= 100 ? "red" : pct >= 75 ? "amber" : "green";
     const barWidth = Math.min(100, pct);
     const dueTxt   = nextDueDateText(chore);
     const dueCls   = type === "overdue" ? "overdue" : type === "soon" ? "soon" : "";
+    const pts      = parseInt(chore.points) || 1;
 
-    const pts = parseInt(chore.points) || 1;
     return `<div class="chore-card ${type}" data-id="${chore.id}">
       <div class="chore-title-row">
         <div class="chore-name">${escHtml(chore.name)}</div>
