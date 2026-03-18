@@ -925,15 +925,16 @@ let kidsData      = {};
 let settingsData  = { adminPassword: DEFAULT_PASSWORD, familyName: "Tidy Squad", familyPin: "1234" };
 let claimingChoreId = null;
 const PIN_SESSION_KEY = "ts_unlocked";
-let pinBuffer     = "";
+let pinBuffer       = "";
+let firebaseTimeout = null;
 
 
 /* ============================================================
    BOOT
 ============================================================ */
 (function init() {
-  populateAnchorSelects();
-  initPinGate();
+  try { populateAnchorSelects(); } catch(e) { console.warn("populateAnchorSelects failed:", e); }
+  try { initPinGate(); }           catch(e) { console.warn("initPinGate failed:", e); }
   updateDateDisplay();
   setInterval(updateDateDisplay, 60_000);
   setInterval(() => { if (Object.keys(choresData).length) renderAll(); }, 60_000);
@@ -941,6 +942,12 @@ let pinBuffer     = "";
   const configured = FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY";
 
   if (configured) {
+    // Fallback if Firebase doesn't respond within 8 seconds
+    firebaseTimeout = setTimeout(() => {
+      console.warn("Firebase timeout — falling back to local data");
+      fallbackToLocal();
+    }, 8000);
+
     try {
       firebase.initializeApp(FIREBASE_CONFIG);
       db = firebase.database();
@@ -948,6 +955,7 @@ let pinBuffer     = "";
       attachFirebaseListeners();
     } catch (e) {
       console.error("Firebase init failed:", e);
+      clearTimeout(firebaseTimeout);
       fallbackToLocal();
     }
   } else {
@@ -992,6 +1000,7 @@ function saveLocal() {
 }
 
 function doneLoading() {
+  clearTimeout(firebaseTimeout);
   document.getElementById("loadingState").style.display  = "none";
   document.getElementById("mainContent").style.display   = "block";
   renderAll();
