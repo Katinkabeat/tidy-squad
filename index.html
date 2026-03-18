@@ -268,10 +268,27 @@
     .stats-title {
       color: #fff; font-weight: 900; font-size: 1.5rem;
       text-shadow: 0 2px 8px rgba(0,0,0,.25);
-      margin-bottom: 6px;
+      margin-bottom: 14px;
     }
-    .stats-sub {
-      color: rgba(255,255,255,.65); font-size: .85rem; margin-bottom: 20px;
+    /* ── Stats tabs ── */
+    .stats-tabs {
+      display: flex; gap: 0;
+      background: rgba(0,0,0,.18);
+      border-radius: 12px; padding: 4px;
+      margin-bottom: 20px;
+    }
+    .stats-tab {
+      flex: 1; border: none; background: transparent;
+      color: rgba(255,255,255,.55);
+      font-size: .8rem; font-weight: 700;
+      padding: 9px 6px; border-radius: 9px;
+      cursor: pointer; transition: all .15s;
+      text-align: center; line-height: 1.2;
+    }
+    .stats-tab.active {
+      background: rgba(255,255,255,.22);
+      color: #fff;
+      box-shadow: 0 1px 4px rgba(0,0,0,.2);
     }
     .lb-row {
       display: flex; align-items: center; justify-content: space-between;
@@ -745,7 +762,11 @@
 <!-- STATS PAGE -->
 <div id="statsContent">
   <div class="stats-title">🏆 Stats</div>
-  <div class="stats-sub">Total points earned by each person</div>
+  <div class="stats-tabs">
+    <button class="stats-tab active" id="stab-week"     onclick="switchStatsTab('week')">📅 This Week</button>
+    <button class="stats-tab"        id="stab-lastweek" onclick="switchStatsTab('lastweek')">📆 Last Week</button>
+    <button class="stats-tab"        id="stab-alltime"  onclick="switchStatsTab('alltime')">🏆 All Time</button>
+  </div>
   <div id="leaderboardList"></div>
 </div>
 
@@ -1051,10 +1072,11 @@ let usingFirebase = false;
 let choresData    = {};
 let kidsData      = {};
 let settingsData  = { adminPassword: DEFAULT_PASSWORD, familyName: "Tidy Squad", familyPin: "1234" };
-let claimingChoreId = null;
+let claimingChoreId  = null;
 const PIN_SESSION_KEY = "ts_unlocked";
-let pinBuffer       = "";
-let firebaseTimeout = null;
+let pinBuffer        = "";
+let firebaseTimeout  = null;
+let currentStatsTab  = "week";   // "week" | "lastweek" | "alltime"
 
 
 /* ============================================================
@@ -1142,6 +1164,14 @@ function switchView(view) {
   document.getElementById("navChores").classList.toggle("active", isChores);
   document.getElementById("navStats").classList.toggle("active", !isChores);
   if (!isChores) renderLeaderboard();
+}
+
+function switchStatsTab(tab) {
+  currentStatsTab = tab;
+  ["week","lastweek","alltime"].forEach(t => {
+    document.getElementById("stab-" + t).classList.toggle("active", t === tab);
+  });
+  renderLeaderboard();
 }
 
 function applySettings() {
@@ -1407,18 +1437,41 @@ function renderLeaderboard() {
     return;
   }
 
-  // Sort by totalPoints descending
-  const ranked = entries
-    .map(([, kid]) => ({ name: kid.name, pts: parseInt(kid.totalPoints) || 0 }))
-    .sort((a, b) => b.pts - a.pts);
+  const thisWeekStart = getWeekStart();
+  const tab           = currentStatsTab;
+
+  const ranked = entries.map(([, kid]) => {
+    let pts = 0;
+    if (tab === "week") {
+      // Only count if kid's stored weekStart is within the current Mon–Sun window
+      pts = (parseInt(kid.weekStart) || 0) >= thisWeekStart
+        ? (parseInt(kid.weekPoints) || 0)
+        : 0;
+    } else if (tab === "lastweek") {
+      // lastWeekPoints saved when the week rolled over
+      pts = parseInt(kid.lastWeekPoints) || 0;
+    } else {
+      // All time
+      pts = parseInt(kid.totalPoints) || 0;
+    }
+    return { name: kid.name, pts };
+  }).sort((a, b) => b.pts - a.pts);
+
+  const subtitles = {
+    week:     "Points earned since Monday",
+    lastweek: "Points earned last Mon – Sun",
+    alltime:  "Total points ever earned"
+  };
 
   const medals = ["🥇","🥈","🥉"];
-  el.innerHTML = ranked.map((p, i) => `
+  const rows = ranked.map((p, i) => `
     <div class="lb-row">
       <span class="lb-rank">${medals[i] || (i + 1) + "."}</span>
       <span class="lb-name">${escHtml(p.name)}</span>
-      <span class="lb-pts">⭐ ${p.pts} pts</span>
+      <span class="lb-pts">⭐ ${p.pts} pt${p.pts !== 1 ? "s" : ""}</span>
     </div>`).join("");
+
+  el.innerHTML = `<div class="stats-sub">${subtitles[tab]}</div>` + rows;
 }
 
 
@@ -1508,6 +1561,21 @@ function renderSection(type, items) {
 
 
 /* ============================================================
+   WEEK HELPERS
+============================================================ */
+// Returns the timestamp for Monday 00:00:00 of the current week
+function getWeekStart() {
+  const d   = new Date();
+  const day = d.getDay();                      // 0=Sun … 6=Sat
+  const diffToMon = (day === 0) ? -6 : 1 - day;
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + diffToMon, 0, 0, 0, 0).getTime();
+}
+
+// Returns the timestamp for Monday 00:00:00 of the PREVIOUS week
+function getLastWeekStart() { return getWeekStart() - 7 * 24 * 60 * 60 * 1000; }
+
+
+/* ============================================================
    CLAIM MODAL
 ============================================================ */
 function openClaimModal(choreId, choreName) {
@@ -1544,12 +1612,29 @@ async function claimChore(kidName) {
   await dbSet(choreRef + "/lastCompletedBy", kidName);
 
   // Award points to this person
-  const pts = parseInt(choresData[claimingChoreId]?.points) || 1;
+  const pts      = parseInt(choresData[claimingChoreId]?.points) || 1;
   const kidEntry = Object.entries(kidsData).find(([, k]) => k.name === kidName);
   if (kidEntry) {
     const [kidId, kid] = kidEntry;
+
+    // All-time total
     const newTotal = (parseInt(kid.totalPoints) || 0) + pts;
     await dbSet(`kids/${kidId}/totalPoints`, newTotal);
+
+    // Weekly points — reset if a new Mon–Sun week has started
+    const thisWeekStart = getWeekStart();
+    const storedWeekStart = parseInt(kid.weekStart) || 0;
+    let weekPts     = parseInt(kid.weekPoints)     || 0;
+    let lastWeekPts = parseInt(kid.lastWeekPoints) || 0;
+
+    if (storedWeekStart < thisWeekStart) {
+      // New week: save current week as last week, then reset
+      lastWeekPts = weekPts;
+      weekPts     = 0;
+      await dbSet(`kids/${kidId}/weekStart`,      thisWeekStart);
+      await dbSet(`kids/${kidId}/lastWeekPoints`, lastWeekPts);
+    }
+    await dbSet(`kids/${kidId}/weekPoints`, weekPts + pts);
   }
 
   closeOverlay("claimOverlay");
