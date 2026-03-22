@@ -1515,9 +1515,14 @@ function renderAll() {
     const status = choreStatus(chore);
     const days   = daysUntilDue(chore);
     const item   = { id, ...chore, _status: status, _days: days };
-    if      (days < 7)   buckets.week.push(item);
-    else if (days <= 14) buckets.twoweeks.push(item);
-    else                 buckets.later.push(item);
+    // Done chores with days > 0 skip "This Week" — they go to wherever their next due
+    // date lands. Only overdue / upcoming (not-done) chores show in "This Week".
+    if (status === "done" && days > 0) {
+      if (days <= 14) buckets.twoweeks.push(item);
+      else            buckets.later.push(item);
+    } else if (days < 7)   { buckets.week.push(item);
+    } else if (days <= 14) { buckets.twoweeks.push(item);
+    } else                 { buckets.later.push(item); }
   });
 
   // Sort most urgent first within each tab
